@@ -14,6 +14,7 @@
 \usepackage{float}
 \usepackage{pbox}
 \usepackage{makecell}
+\usepackage{gensymb}
 \graphicspath{{images/}}
 
 \usepackage{color}
@@ -34,8 +35,6 @@
     bookmarksopen=true]{hyperref}
 \usepackage{graphicx}
 \usepackage{hyperref}
-
-\newcommand{\itwos}{I\textsuperscript{2}S}
 
 \newcommand{\instbit}[1]{\mbox{\scriptsize #1}}
 \newcommand{\instbitrange}[2]{~\instbit{#1} \hfill \instbit{#2}~}
@@ -571,45 +570,64 @@ If your CPI exceeds this value, you will need to modify your datapath and pipeli
 This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
 
 \subsection{How to Survive This Checkpoint}
-The key to this checkpoint will be to start early and work on your design incrementally. This project is not something that can be done with an all nighter and we can almost guarantee that you will not finish if you start two or three days before the due date. The key to this checkpoint will be to draw up a very detailed and organised block diagram and thoroughly understand all parts of the specification. Groups that have been successful in the past usually have unit test cases that thoroughly test every module and progressively larger integration tests. We recommend for your final integration test of the whole system that you write individual programs that thoroughly test the behavior of each instruction. The final BIOS program that you will be required to run is several 1000 lines of assembly and will be nearly impossible to use for debugging by just looking at the Modelsim waveforms.
+Start early and work on your design incrementally.
+Draw up a very detailed and organised block diagram and keep it up to date as you begin writing Verilog.
+Unit test independent modules such as the control unit, ALU, and regfile.
+Write thorough and complex assembly tests by hand, and don't solely rely on the RISC-V ISA test suite.
+The final BIOS program is several 1000 lines of assembly and will be nearly impossible to debug by just looking at the waveform.
 
-We also encourage groups to work together and bounce ideas off of each other. The most valuable asset for this checkpoint will not be your GSIs but will be your fellow peers who you can compare notes with and discuss design aspects with in detail. However, do NOT under any circumstances share source code. We highly recommend getting adequate sleep during the weeks of this checkpoint. We realise there are not windows or clocks in the lab so it’s very easy to get carried away and work into the early morning in the lab. If you find yourself spinning your wheels, it’s probably time to go home and sleep a bit before trying again.
+The most valuable asset for this checkpoint will not be your GSIs but will be your fellow peers who you can compare notes with and discuss design aspects with in detail.
+However, do NOT under any circumstances share source code.
 
-\subsection{How To Get Started}
-It might seem overwhelming to implement all the functionality that your processor must support. The best way to implement your processor is in small increments, checking the correctness of your processor at each step along the way. Here is a guide that should help you plan out checkpoint 1:
+Once you're tired, go home and \textit{sleep}. When you come back you will know how to solve your problem.
+
+\subsubsection{How To Get Started}
+It might seem overwhelming to implement all the functionality that your processor must support. The best way to implement your processor is in small increments, checking the correctness of your processor at each step along the way. Here is a guide that should help you plan out Checkpoint 1 and 2:
 
 \begin{enumerate}
-  \item \textbf{Design.} You should start with a comprehensive and detailed design/schematic. We suggest that you think carefully about all the functionality and instructions your processor needs to support and enumerate all the control signals that you will need. Be especially careful when designing the memory fetch stage of your pipeline as all the memories we use (BIOS, inst, data, IO) are synchronous.
-  \item \textbf{First steps.} You should get started by implementing some modules that are straightforward to write and test. We suggest you get started by writing \verb|RegFile.v|, for which there has been a template provided in the project skeleton. Once you finish writing the regfile, test it comprehensively by writing a Verilog testbench. Look at the Register File section for details on what the test should verify.
-  \item \textbf{Control Unit + other small modules.} Next try implementing your control unit, the ALU, and any other small independent modules that you identified in your design. Make sure you unit test these aggressively, so that you verify their correctness and get used to writing Verilog testbenches.
-  \item \textbf{Memory.} Create your memory controller and other auxiliary structures. Only add the BIOS memory in the instruction fetch stage and only add the data memory block RAM in the memory stage of your pipeline. This will keep things simple in order to test the base functionality of your processor.
-  \item \textbf{Connect stages and pipeline.} Now you should have all of the modules ready to connect them together and pipeline them by inserting registers between the stages. At this point, you should be able to run integration tests using assembly tests for most R and I type instructions.
-  \item \textbf{Implement handling of control hazards.} Now insert bubbles into your pipeline to resolve control hazards associated with JAL, JALR, and branch instructions. Don't worry about data hazard handling for now. Test that your control instructions work properly with assembly tests. You can insert explicit NOP instructions in your tests to get around data dependencies.
-  \item \textbf{Implement data forwarding for data hazards.} Add forwarding muxes to the proper place in your datapath and forward the outputs of the ALU and memory stage. Implement a hazard unit that can detect data dependencies and set the control signals for the forwarding muxes accordingly. Remember that you might have to forward to ALU input A, ALU input B, and data to write to memory. Test forwarding aggressively; most of your bugs will come from incomplete or faulty forwarding logic. Make sure you test forwarding from memory and from the ALU, and with control instructions.
-  \item \textbf{Add BIOS memory reads.} Add the BIOS memory block RAM to the memory stage to be able to load data from the BIOS memory. Write assembly tests that contain some static data stored in the BIOS memory and verify that you can read that data.
-  \item \textbf{Add Inst memory writes and reads.} Add the instruction memory block RAM to the memory stage to be able to write data to it when executing inside the BIOS memory. Also add the instruction memory block RAM to the instruction fetch stage to be able to read instructions from the inst memory. It is crucial to write tests to stress this portion of the processor; we suggest writing tests that first write instructions to the instruction memory, and then jump (using jalr) to instruction memory to see the right instructions are executed.
-  \item \textbf{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a SW instruction, and can be read from using a LW instruction.
-  \item \textbf{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. This part can be tricky, ask a TA for a full explanation of how a program would communicate with the UART. We have provided you with the \verb|echo_testbench| which performs a test of the UART. You should extend this testbench with more comprehensive tests, as many bugs can be traced to a faulty UART integration.
-  \item \textbf{Run the BIOS.} If everything so far has gone well, you can try making the CPU with instantiating the BIOS memory with the BIOS program. Impact the CPU on the board and verify that the BIOS performs as expected. As a precursor to this step, you might try to make the CPU with instantiating the BIOS memory with the echo program, since it is a smaller and easier to analyze program.
-  \item \textbf{Run matrix multiply.} As a final step to check your implementation, you should be able to load the \verb|mmult| program with the \verb|coe_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
-  \item \textbf{Check CPI.} Now that your processor is complete as far as functionality goes, compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it. With this step complete, you are ready for the next checkpoint.
+  \item \textit{Design.} You should start with a comprehensive and detailed design/schematic. We suggest that you think carefully about all the functionality and instructions your processor needs to support and enumerate all the control signals that you will need. Be especially careful when designing the memory fetch stage of your pipeline as all the memories we use (BIOS, inst, data, IO) are synchronous.
+  \item \textit{First steps.} You should get started by implementing some modules that are straightforward to write and test. We suggest you get started by writing \verb|reg_file.v|, for which there has been a template provided in the project skeleton. Once you finish writing the regfile, test it comprehensively by writing a Verilog testbench. Look at the Register File section for details on what the test should verify.
+  \item \textit{Control Unit + other small modules.} Next try implementing your control unit, the ALU, and any other small independent modules that you identified in your design. Make sure you unit test these aggressively, so that you verify their correctness and get used to writing Verilog testbenches.
+  \item \textit{Memory.} Create your memory controller and other auxiliary structures. Only add the BIOS memory in the instruction fetch stage and only add the data memory block RAM in the memory stage of your pipeline. This will keep things simple in order to test the base functionality of your processor.
+  \item \textit{Connect stages and pipeline.} Now you should have all of the modules ready to connect them together and pipeline them by inserting registers between the stages. At this point, you should be able to run integration tests using assembly tests for most R and I type instructions.
+  \item \textit{Implement handling of control hazards.} Now insert bubbles into your pipeline to resolve control hazards associated with JAL, JALR, and branch instructions. Don't worry about data hazard handling for now. Test that your control instructions work properly with assembly tests. You can insert explicit NOP instructions in your tests to get around data dependencies.
+  \item \textit{Implement data forwarding for data hazards.} Add forwarding muxes to the proper place in your datapath and forward the outputs of the ALU and memory stage. Implement a hazard unit that can detect data dependencies and set the control signals for the forwarding muxes accordingly. Remember that you might have to forward to ALU input A, ALU input B, and data to write to memory. Test forwarding aggressively; most of your bugs will come from incomplete or faulty forwarding logic. Make sure you test forwarding from memory and from the ALU, and with control instructions.
+  \item \textit{Add BIOS memory reads.} Add the BIOS memory block RAM to the memory stage to be able to load data from the BIOS memory. Write assembly tests that contain some static data stored in the BIOS memory and verify that you can read that data.
+  \item \textit{Add Inst memory writes and reads.} Add the instruction memory block RAM to the memory stage to be able to write data to it when executing inside the BIOS memory. Also add the instruction memory block RAM to the instruction fetch stage to be able to read instructions from the inst memory. It is crucial to write tests to stress this portion of the processor; we suggest writing tests that first write instructions to the instruction memory, and then jump (using jalr) to instruction memory to see the right instructions are executed.
+  \item \textit{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a SW instruction, and can be read from using a LW instruction.
+  \item \textit{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. This part can be tricky, ask a TA for a full explanation of how a program would communicate with the UART. We have provided you with the \verb|echo_testbench| which performs a test of the UART. You should extend this testbench with more comprehensive tests, as many bugs can be traced to a faulty UART integration.
+  \item \textit{Run the BIOS.} If everything so far has gone well, you can try making the CPU with instantiating the BIOS memory with the BIOS program. Impact the CPU on the board and verify that the BIOS performs as expected. As a precursor to this step, you might try to make the CPU with instantiating the BIOS memory with the echo program, since it is a smaller and easier to analyze program.
+  \item \textit{Run matrix multiply.} As a final step to check your implementation, you should be able to load the \verb|mmult| program with the \verb|coe_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
+  \item \textit{Check CPI.} Now that your processor is complete as far as functionality goes, compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
 \end{enumerate}
 
 \subsection{Checkoff}
-
-The checkoff for this specification is divided into two stages: block diagram/design and implementation. The second part will require significantly more time and effort than the first one. As such, completing the block diagram in time for the design review is crucial to your success in this project.
+The checkoff is divided into two stages: block diagram/design and implementation.
+The second part will require significantly more time and effort than the first one.
+As such, completing the block diagram in time for the design review is crucial to your success in this project.
 
 \subsubsection{\blockDiagramTaskName: Block Diagram}
-The first checkpoint requires a detailed block diagram of your datapath. The diagram should have a greater level of detail than a high level RISC datapath diagram. You may complete this electronically or by hand. If working by hand, we recommend working in pencil and combining several sheets of paper for a larger workspace. You should also be able to describe in detail any smaller sub-blocks in your diagram. If working electronically, you can use a schematic capture program, Logisim, or anything that can produce a diagram that is easily modifiable. Though the textbook diagrams are a decent starting place, please remember that they use asynchronous-read memories for the instruction and data memories, and we will be using synchronous-read block RAMs. Additionally, at this point we recommend that you have a completely functional UART, ALU, ALU decoder, and register file modules (see \ref{reg_file}), though we will not be checking this.
+The first checkpoint requires a detailed block diagram of your datapath.
+The diagram should have a greater level of detail than a high level RISC datapath diagram. You may complete this electronically or by hand.
 
-\textbf{\blockDiagramTaskName \space is due in lab no later than \blockDiagramDueDate}. You are required to go over your design with a GSI during lab. Be prepared to talk generally about how you came up with your design and defend your design decisions.
+If working by hand, we recommend working in pencil and combining several sheets of paper for a larger workspace.
+If doing it electronically, you can use Inkscape, Google Drawings, draw.io or any program you want.
+
+You should be able to describe in detail any smaller sub-blocks in your diagram.
+Though the textbook diagrams are a decent starting place, remember that they often use asynchronous-read RAMs for the instruction and data memories, and we will be using synchronous-read block RAMs.
+Additionally, at this point we recommend that you have completely functional UART, ALU, instruction decoder, and register file modules (see \ref{reg_file}), though we will not be checking this.
+
+\textbf{\blockDiagramTaskName \space is due in lab no later than \blockDiagramDueDate}.
+You are required to go over your design with a GSI during lab.
+Be prepared to talk generally about how you came up with your design and defend your design decisions.
 
 \subsubsection{Non-Checkpoint Weeks}
-
-In labs, you probably found that you spent significantly more time debugging and verifying your design than actually writing Verilog. Though your skills are continually improving, this project involves a complex system and as such, bugs are inevitable. Design verification can take more than twice as long as writing the initial implementation. Given this, we recommend that you have completed your first stab at writing the Verilog and associated module testbenches for your processor by the end of this week.
+GSIs will be in lab during the regular times to help you.
+Come to lab every week even if there is no checkoff deadline.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
-This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification. Checkoff will consist of a demonstration of the BIOS functionality, storing a program (echo and mmult) over the serial interface, and successfully jumping to and executing the program.
+This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
+Checkoff will consist of a demonstration of the BIOS functionality, storing a program (echo and mmult) over the UART, and successfully jumping to and executing the program.
 
 \textbf{\baseCPUTaskName \space materials should be committed to your project repository by \baseCPUDueDate.}
 
@@ -628,87 +646,96 @@ This checkpoint requires a fully functioning three stage RISC-V CPU as described
 
 \pagebreak
 
-\section{Checkpoint 3 - I/O, FIFO, HDMI, Line Accelerator}
-In checkpoint 3 of this project you will implement a memory mapped I/O interface to user inputs and outputs (push buttons, LEDs, and switches). To buffer user inputs to your processor you will integrate the FIFO built in lab.
+\section{Checkpoint 3 - I/O Integration, PWM Controller, Subtractive Synthesizer}
+In checkpoint 3 of this project you will implement a memory mapped I/O interface to user inputs and outputs (buttons, LEDs, and switches).
+To buffer user inputs to your processor you will integrate the FIFO built in lab.
 
-You will also implement (part of) an HDMI controller with a frame buffer that can be written to by both your CPU and a line-drawing accelerator. You will implement the line-drawing accelerator to take arguments from your CPU and fill in the frame buffer for you, with lines. At first you will use a block RAM frame buffer. As an extension, you will use the Pynq-Z1's DRAM to support full 8-bit colour output.
+You will design a generic PWM controller to drive the audio output that can be configured over MMIO.
+Finally, you will implement a simple polyphonic subtractive synthesizer with amplitude (ADSR) envelopes.
 
-\subsection{User I/O Interfacing}
-In lab, you built a synchroniser, debouncer and an edge detector that were used to take in various user inputs (push buttons mostly). Now, we want our processor to have access to these inputs (and the switches) and also to be able to drive outputs such as the LEDs. We will extend our memory map to give user programs access to these I/Os.
+\subsection{I/O Integration}
+In lab, you built a synchroniser, debouncer and an edge detector that were used to take in various user inputs.
+Now, we want our processor to have access to these inputs (and the switches) and also to be able to drive outputs such as the LEDs.
+We will extend our memory map to give programs access to these I/Os.
 
-When a user pushes a button on the Pynq-Z1 board, the button's signal travels through the synchroniser $\rightarrow$ debouncer $\rightarrow$ edge detector chain. The result is a single clock cycle wide pulse coming out of the edge detector that represents a single button press. If we just extended our memory map to directly include the outputs from the edge detector, the processor would have to read from those locations on every clock cycle to be sure it didn't miss any user inputs.
+When a user pushes a button on the Pynq-Z1 board, the button's signal travels through the synchroniser $\rightarrow$ debouncer $\rightarrow$ edge detector chain.
+The result is a single clock cycle wide pulse coming out of the edge detector that represents a single button press.
+If we just extended our memory map to directly include the outputs from the edge detector, the processor would have to read from those locations on every clock cycle to be sure it didn't miss any user inputs.
 
-(We will sometimes refer to these devices as GPIO, meaning General-Purpose I/O.)
+To fix this, we will buffer user inputs with a FIFO and let the processor consume them when it has time to do so.
 
-This is clearly not feasible as it would starve our processor. We need a way to buffer user inputs and let the processor consume them when it has time to do so. This buffer will be implemented as a FIFO.
-
-\subsubsection{Hookup FIFO to User I/O}
-We'll use the FIFO to buffer user I/O signals for the RISC-V core to consume via memory-mapped I/O. We want to give the processor access to these I/Os:
+\subsubsection{Hookup User I/O}
+We want to give the processor access to these I/Os:
 
 \begin{itemize}
   \item Switches
   \item GPIO LEDs (the ones on the Pynq-Z1 board)
   \item Push-buttons
-  \item PMOD LEDs
-
-\textbf{Note:} You won't be able to use the PMOD LEDs at the same time as the USB UART and the I2S controller, owing to a lack of PMOD ports on the Pynq-Z1. You can thus omit the \verb|PMOD_LEDS| signal from the memory connection; it's left in for illustrative purposes.
-
 \end{itemize}
 
-Here is the new memory map:
+The I/O extension to the memory map is in Table \ref{mem_map2}.
+
 \begin{table}[hbt]
   \begin{center}
-    \caption{Updated Memory Map with User I/O}
+    \caption{Memory Map for I/O Integration}
     \label{mem_map2}
     \begin{tabular}{l l l l}
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      32'h80000000 & UART control & Read & \{30'b0, DataOutValid, DataInReady\} \\
-      32'h80000004 & UART receiver data & Read & \{24'b0, DataOut\} \\
-      32'h80000008 & UART transmitter data & Write & \{24'b0, DataIn\} \\
+      \verb|32'h80000020| & GPIO FIFO Empty & Read & \verb|{31'b0, empty}| \\
+      \verb|32'h80000024| & GPIO FIFO Read Data & Read & \verb|{28'b0, buttons[3:0]}| \\
       \midrule
-      32'h80000010 & Cycle counter & Read & Total number of cycles \\
-      32'h80000014 & Instruction counter & Read & Number of instructions executed \\
-      32'h80000018 & Reset counters to 0 & Write & N/A \\
+      \verb|32'h80000028| & Switches & Read & \verb|{30'b0, SWITCHES[1:0]}| \\
       \midrule
-      32'h80000020 & GPIO FIFO Empty & Read & \{31'b0, empty\} \\
-      32'h80000024 & GPIO FIFO Read Data & Read & \{28'b0, BUTTONS[3:0] \} \\
-      \midrule
-      32'h80000028 & Switches & Read & \{30'b0, SWITCHES[1:0]\} \\
-      \midrule
-      32'h80000030 & GPIO LEDs \& PMOD LEDs & Write & \{16'b0, PMOD\_LEDS[7:0], 2'b0, LEDS[5:0]\} \\
+      \verb|32'h80000030| & GPIO LEDs & Write & \verb|{26'b0, LEDS[5:0]}| \\
       \midrule
     \end{tabular}
   \end{center}
 \end{table}
 
-We want to use our FIFO for the signals enumerated in the GPIO FIFO Read Data row. On any given clock cycle, when any of the button signals pulse high, the FIFO should be written to with the status of all the button signals. The CPU should be able to read the empty signal of the FIFO, and it should be able to read out data from the FIFO with the FIFO's \verb|rd_en| signal controlled by your memory logic.
+On any given clock cycle, when any of the button signals pulse high, the FIFO should be written to with the status of all the button signals.
+The CPU should be able to read the empty signal of the FIFO, and it should be able to read out data from the FIFO with the FIFO's \verb|rd_en| signal controlled by your memory logic.
 
 Modify \verb|z1top.v| and \verb|Riscv151.v| by instantiating your FIFO, hooking up its ports to the user I/O signals, and connecting your FIFO's read interface to the RISC-V core.
 
 \subsubsection{User I/O Test Program}
-We have provided a program that you can use to test your FIFO and memory map. It is found in \verb|software/user_io_test|. To run it, synthesize, implement and program your FPGA design as usual. Then, reset your design. Run \verb|make| in the \verb|user_io_test| folder, and then run \verb|coe_to_serial user_io_test.coe 30006000|. Then \verb|screen| and \verb|jal 10006000| from the BIOS to jump into the user I/O test program.
+The \verb|software/user_io_test| tests the FIFO and user I/O integration.
+After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|coe_to_serial user_io_test.coe 30006000|.
+Then \verb|screen| and \verb|jal 10006000| from the BIOS to jump into the user I/O test program.
 
 This program has several commands to help you debug and verify functionality:
 \begin{itemize}
-  \item \verb|read_buttons| - This command will have the CPU read from the GPIO FIFO until it is empty, decode the button press data, and print it out.
-  \item \verb|read_switches| - This command will have the CPU read the slide switches' address and will print out the state of the switches.
-  \item \verb|led <data>| - This command will write the \verb|<data>| (32-bits in hex) that you specify to the GPIO LEDs address. Keep in mind we only have 6 LEDs on the board (unless you use the LED PMOD), so you only write values up to 0x3F.
+  \item \verb|read_buttons| - CPU reads from the GPIO FIFO until it is empty, decodes the button press data, and prints it out.
+  \item \verb|read_switches| - CPU reads the slide switches' address and prints out the state of the switches.
+  \item \verb|led <data>| - Writes the \verb|<data>| (32-bits in hex) that you specify to the GPIO LEDs address. We only have 6 LEDs on the board so you can write values up to 0x3F.
   \item \verb|exit| - Jump back into BIOS.
 \end{itemize}
 
-Once you are confident that all the user I/Os are working, move on to the next section.
+\subsection{PWM Controller}
+\subsubsection{Piano Program}
+
+\subsection{Subtractive Synth}
 
 \subsection{Checkpoint 3 Deliverables Summary}
-
 \begin{center}
   \begin{tabular}{m{30mm} m{35mm} m{70mm}}
     \toprule
     \textbf{Deliverable} & \textbf{Due Date} & \textbf{Description} \\
     \midrule
-    User I/O + FIFOs + HDMI video controller + line drawing accelerator & \audioDueDate & Demonstrate the working user IO test program. Explain your testing methodology for the FIFOs and any system level integration testbenches you created.  Demonstrate a working static image test. Demonstrate line or image drawing from both the CPU and the accelerator. \\
-    %Demonstrate the \itwos{} visual piano
+    User I/Os + PWM Piano + Synth & \audioDueDate & Demonstrate the working user IO test, and PWM piano programs. Describe the design of your synth and produce various sounds.\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\section{\dfsTaskName: Power Management Unit with Dynamic Frequency Scaling}
+\subsection{Checkpoint 4 Deliverables Summary}
+\begin{center}
+  \begin{tabular}{m{30mm} m{35mm} m{70mm}}
+    \toprule
+    \textbf{Deliverable} & \textbf{Due Date} & \textbf{Description} \\
+    \midrule
+    PMU Core + power management program & \dfsDueDate & Demonstrate keeping the FPGA temperature below X\degree C while executing an intensive \verb|mmult| in less than X seconds.\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -716,8 +743,8 @@ Once you are confident that all the user I/Os are working, move on to the next s
 \pagebreak
 
 \section{Final Checkpoint - Optimization}
-
-This optimization checkpoint is lumped with the final checkpoint and the checkoff will occur at the same time. This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
+This optimization checkpoint is lumped with the final checkpoint and the checkoff will occur at the same time.
+This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 
 The general optimization goal for this project is to achieve maximal performance on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
 
@@ -725,14 +752,19 @@ The general optimization goal for this project is to achieve maximal performance
 \frac{\text{Time}}{\text{Program}} = \frac{\text{Instructions}}{\text{Program}} \times \frac{\text{Cycles}}{\text{Instruction}} \times \frac{\text{Time}}{\text{Cycle}}
 \end{equation*}
 
-Your goal is to minimize the execution time of \verb|mmult|. The number of instructions is fixed, but you have freedom to change the CPI and the CPU clock frequency. Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
+Your goal is to minimize the execution time of \verb|mmult|.
+The number of instructions is fixed, but you have freedom to change the CPI and the CPU clock frequency.
+Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
 
 \subsection{Clock Generation Info + Changing Clock Frequency}
-Open up \verb|z1top.v|. You will notice a top level input called \verb|USER_CLK|. This signal comes from a crystal on the ML505 board and it comes into our FPGA design. It is a 125 MHz clock signal, which we will use to derive our CPU clock.
+Open up \verb|z1top.v|.
+You will notice a top level input called \verb|CLK_125MHZ_FPGA|.
+It is a 125 MHz clock signal, which we will use to derive our CPU clock.
 
-Scrolling down a little further, you will see an instantiation of \verb|PLLE2_ADV|, which is a PLL (phase locked loop) primitive on the FPGA. This is a circuit that lets us create a new clock from a known clock with a user-specified multiply-divide ratio.
+Scrolling down a little further, you will see an instantiation of \verb|PLLE2_ADV|, which is a PLL (phase locked loop) primitive on the FPGA.
+This is a circuit that lets us create a new clock from an existing clock with a user-specified multiply-divide ratio.
 
-The \verb|CLKIN| input clock of the PLL. is driven by the 125 MHz \verb|user_clk_g| (buffered \verb|USER_CLK|). The PLL divides this frequency by the \verb|DIVCLK_DIVIDE| parameter, which is set to 5. Thus, internally, the PLL creates a 25 MHz clock. Then, this multiplied clock is divided by \verb|CLKFBOUT_MULT| parameter and divided by the \verb|CLKOUT0_DIVIDE| parameter. In our case, this yields \verb|125_000_000 / 5 * | \newline \verb|34 / 17 = 50_000_000|, our desired CPU clock. Finally, the multiplied and divided clock shows up at the \verb|CLKOUT0| output clock of the PLL, which is connected to \verb|cpu_clk|. The \verb|cpu_clk| is buffered and \verb|cpu_clk_g| is used in our CPU and other modules.
+The \verb|CLKIN| input clock of the PLL is driven by the 125 MHz \verb|user_clk_g| (buffered \verb|USER_CLK|). The PLL divides this frequency by the \verb|DIVCLK_DIVIDE| parameter, which is set to 5. Thus, internally, the PLL creates a 25 MHz clock. Then, this multiplied clock is divided by \verb|CLKFBOUT_MULT| parameter and divided by the \verb|CLKOUT0_DIVIDE| parameter. In our case, this yields \verb|125_000_000 / 5 * | \newline \verb|34 / 17 = 50_000_000|, our desired CPU clock. Finally, the multiplied and divided clock shows up at the \verb|CLKOUT0| output clock of the PLL, which is connected to \verb|cpu_clk|. The \verb|cpu_clk| is buffered and \verb|cpu_clk_g| is used in our CPU and other modules.
 
 Play around with the multipliers and divisors in the PLL to generate a faster (or slower) clock. You may have to consult Xilinx's documentation on the \verb|PLL2E_ADV| primitive. (You can also use the Clocking Wizard IP generator in Vivado to generate this instantiation.) The parameters can't be set arbitrarily and there are a few caveats. The multipliers and divisors must be integers and you must fall within the device's operating frequency range - Vivado will complain if you don't. A few frequencies to try are: 60 MHz, 75 MHz, and 100 MHz.
 
@@ -778,7 +810,7 @@ You will be graded based on the best \verb|mmult| performance you were able to a
 
 \subsection{Grading on Optimization}
 
-To receive full credit, you must demonstrate a working CPU at an optimized clock frequency (above 50MHz) that has a working BIOS, can load and execute programs (both echo and mmult), can receive, process, and send to user I/O, and has a working \itwos{} controller. Additionally, you will be graded on total FPGA resource utilization, with the best designs using as few resources as possible. If you are unable to make the deadline for any of the checkpoints, it is still in your best interest to complete the design late, as you can still receive most of the credit if you get a working design by the final checkoff.
+To receive full credit, you must demonstrate a working CPU at an optimized clock frequency (above 50MHz) that has a working BIOS, can load and execute programs (both echo and mmult), can receive, process, and send to user I/O, and has a working audio synthesizer. Additionally, you will be graded on total FPGA resource utilization, with the best designs using as few resources as possible. If you are unable to make the deadline for any of the checkpoints, it is still in your best interest to complete the design late, as you can still receive most of the credit if you get a working design by the final checkoff.
 
 Credit for your area optimizations will be calculated using a cost function. At a high level, the cost function will look like:
 
@@ -811,7 +843,7 @@ Here is a suggested outline and page breakdown for your report. You do not need 
   \item \textbf{Project Functional Description and Design Requirements}. Describe the design objectives of your project.  You don't need to go into details about the RISC-V ISA, but you need to describe the high-level design parameters (pipeline structure, memory hierarchy, etc.) for this version of the RISC-V. ($\approx$ 0.5 page)
   \item \textbf{High-level organization}. How is your project broken down into pieces. Block diagram level-description. We are most interested in how you broke the CPU datapath and control
   down into submodules, since the code for the later checkpoints will be pretty consistent across all groups. Please include an updated block diagram ($\approx$ 1 page).
-  \item \textbf{Detailed Description of Sub-pieces}. Describe how your circuits work. Concentrate here on novel or non-standard circuits. Also, focus your attention on the parts of the design that were not supplied to you by the teaching staff. For instance, describe the details of your \itwos{} controller, FIFOs, DVI controller, and any extra credit work. ($\approx$ 2 pages).
+  \item \textbf{Detailed Description of Sub-pieces}. Describe how your circuits work. Concentrate here on novel or non-standard circuits. Also, focus your attention on the parts of the design that were not supplied to you by the teaching staff. For instance, describe the details of your FIFOs, audio synthesizer, and any extra credit work. ($\approx$ 2 pages).
   \item \textbf{Status and Results}. What is working and what is not? At what frequency (50MHz or greater) does your design run? Do certain checkpoints work at a higher clock speed while others only run at 50 MHz? Please also provide the number of LUTs and SLICE registers used by your design, which can be found by running \verb|make report|. Also include the CPI and minimum clock period of running \verb|mmult| for the various optimizations you made to your processor. This section is particularly important for non-working designs (to help us assign partial credit). ($\approx$ 1-2 pages).
   \item \textbf{Conclusions}. What have you learned from this experience? How would you do it different next time? ($\approx$ 0.5 page).
   \item \textbf{Division of Labor. This section is mandatory. Each team member will turn in a separate document from this part only}. The submission for this document will also be on Gradescope. How did you organize yourselves as a team. Exactly who did what? Did both partners contribute equally? Please note your team number next to your name at the top. ($\approx$ 0.5 page).
@@ -828,7 +860,7 @@ The following are suggested projects that may or may not be feasible in one week
   \item Integrating your Tone Generator and I2S Controller from the Lab Assignments (see section \ref{audio_extra_credit} for details)
   \item Branch Predictor: Implement a two bit (or more complicated) branch predictor with a branch history table (BHT) to replace the naive 'always taken' predictor used in the project
   \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz
-  \item Audio Recording: Enable capturing mic input from the \itwos{} controller (for undergrads)
+  \item Audio Recording: Capturing mic input from the Pynq's microphone
   \item RISC-V M Extension: Extend the processor with a hardware multiplier and divider
   \item 3 (or more) bit color: Increase the size of the framebuffer to have control of the RGB content of each pixel
   \item Dynamic Resolution: Allow the processor to control the output resolution of the DVI controller at runtime
@@ -885,7 +917,7 @@ This section details an extra credit opportunity for you to integrate your tone 
 \subsection{Summary}
 You will add the \verb|tone_generator| created in lab to the design as a peripheral and allow programs to access its \verb|tone_switch_period| and \verb|output_enable| inputs over memory mapped I/O. You will be able use your processor to simulate the \verb|music_streamer| FSM built in lab using software only.
 
-You will extend your \itwos{} audio controller created in lab to fetch samples from an asynchronous FIFO that the processor will write to. This will allow your processor to synthesize and send arbitrary waveforms to the \itwos{} DAC. Once you have the tone generator and I2S modules working, you will be able to load a program onto your processor which allows you to use your keyboard as a piano. The program synthesizes sine waves of various frequencies based on what key you are pressing and will transmit the wave to the codec so you can hear the music you play through your headphones.
+Once you have the tone generator working, you will be able to load a program onto your processor which allows you to use your keyboard as a piano. The program synthesizes sine waves of various frequencies based on what key you are pressing and will transmit the wave to the codec so you can hear the music you play through your headphones.
 
 Get started by pulling the latest skeleton files from the staff repository: \verb|git pull staff master|.
 
@@ -982,53 +1014,6 @@ The \verb|music_streamer| functions exactly like it does in Lab 3, but the state
 \end{center}
 
 The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
-
-\subsection{\itwos{} Controller Hookup}
-You will also integrate your \itwos{} controller from labs 5, and 6. Copy over and modify your controller design from previous labs to integrate it into your system. Also copy over your FIFO implementation into \nolinkurl{/hardware/src/io_circuits/fifo.v}. One immediate difference is that the driving clock for the \itwos{} has changed. If you had parameterised your design in the labs, this shouldn't make much difference. More importantly, we will now need to use an asynchronous FIFO as the PCM data buffer between the CPU and your DAC control logic. This allows the controller and CPU to run at different clock speeds, and gives us some freedom to optimize them independently.
-
-We have provided an implementation of an asynchronous FIFO inside of \nolinkurl{/hardware/src/io_circuits/async_fifo.v}. An asynchronous FIFO works like a synchronous FIFO, except for the fact that the read and write interfaces are clocked by different clocks (with no known phase or frequency relation).
-
-An asynchronous FIFO is constructed similarly to a synchronous FIFO with a two ported RAM, a read and write pointer, and some logic to generate the full and empty signals. One difference is that the two ported RAM has two independently clocked ports. Another difference is that the read and write pointers need to be properly transferred to the other clock domain before going through the full and empty signal generation logic. Look through the implementation we provided to get a feel for how the asynchronous FIFO works.
-
-Modify your \itwos{} controller to fetch PCM samples from the async FIFO on every sample frame. \textbf{Make your \itwos{} controller samples 24 bits wide, as in the previous labs.} You should attempt to fetch a new sample from the FIFO and use it as the PCM data for the left and right channel together (i.e., mono output, not stereo). If the FIFO is empty, then your \itwos{} controller should continue playing the last sample it received for the next frame. You should fetch from the FIFO on the bit clock.
-
-After modifying your controller for the new design specs, instantiate it in \verb|z1top.v|, hook it up to an instance of the async FIFO, and hook the FIFO's write interface into the RISC-V core. Here is the memory map:
-
-\begin{table}[hbt]
-  \begin{center}
-    \caption{\itwos{} Controller Memory Map}
-    \begin{tabular}{l l l l}
-      \toprule
-      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
-      \midrule
-      32'h80000040 & \itwos{} FIFO Status & Read & \{31'b0, \itwos{} FIFO full\} \\
-      32'h80000044 & \itwos{} FIFO Send Sample & Write & \{12'b0, \itwos{} FIFO din[23:0]\} \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
-\end{table}
-
-\subsubsection{\itwos{} Controller Integration Testbench}
-An integration testbench has been provided in \nolinkurl{/hardware/src/testbenches/i2s_integration_testbench.v}. The software for this testbench is in \nolinkurl{/software/i2s_integration_tb/i2s_integration_tb.c}.
-
-This testbench performs an end-to-end check of your \itwos{} controller, the CPU's \itwos{} FIFO memory map, and the async FIFO. It verifies that all parts of your system can successfully communicate with each other and pass data along. If you look at the software, you will see that the testbench involves sending the PCM samples -50, -49, ..., 49, 50 to the async FIFO, which should then be read and transmitted to the codec by the \itwos{} controller.
-
-You can run this testbench as usual from within the Vivado simulator (or in ModelSim). This testbench instantiates \verb|z1op| so you need to have your \itwos{} controller, \itwos{} async sample FIFO, and RISC-V core properly hooked up at the top-level.
-
-View the waveform generated by the program's execution to verify the output. In particular, verify that the CPU wrote all the PCM samples to the async FIFO and that the \itwos{} controller pulled out every sample from the async FIFO and sent it to the codec. Make sure that you verify that the FIFO is empty as soon as PCM sample 50 is pulled from the FIFO, and that once the FIFO is empty, the \itwos{} controller keeps replaying the last sample that it fetched from the FIFO (50).
-
-A common bug is to make naive assumptions about the async FIFO interface. Remember that the async FIFO is synchronous on both the read and write interface with respect to the read and write clocks. Thus, when reading from the FIFO, if \verb|rd_en| is asserted on a rising read clock edge, the \verb|dout| signal will have the data \textbf{after} the rising edge. This also means that you should check the \verb|empty| condition on the same edge that \verb|rd_en| is asserted, and not on the next cycle.
-
-\subsubsection{\itwos{} Controller Testing - Tone Program}
-      % TODO(growly): Make this an i2s basic test
-We have provided a program in \verb|software/i2s_basic_test/| that sends samples to the \itwos{} controller via the memory mapped I/O interface. Build and run this program just like \verb|mmult|. Plug in your headphones or speakers to the headphone jack on the board. This program sends a square wave of a certain frequency to the \itwos{} sample FIFO.
-
-\subsubsection{\itwos{} Controller - Piano Program}
-To test your \itwos{} controller, a program is provided that will use your processor to generate sine waves and send them to the \itwos{} controller via the async FIFO memory map. This program is in \verb|/software/i2s_piano|. Compile and run this program in the same way as the previous ones.
-
-Once you execute \verb|jal 10006000|, you should be able to use your keyboard as a piano and play notes by typing into screen (very similar to lab 6). You will hear the output coming from the headphone jack. To switch octaves, hold down the shift key while playing keys. You may want to look at the keymap in \verb|i2s_piano.c| to figure out what characters map to what notes.
-
-You might have to turn up the volume on your headphones or speakers to hear the output properly.
 
 \subsection{Tone Generator and I2S Extra Credit Deliverables}
 \begin{itemize}
