@@ -14,39 +14,27 @@ endif
 
 LIB_PATH := ../151_library
 LIB_SOURCES := $(wildcard ../151_library/*.c)
-LIB_OBJECTS := $(LIB_SOURCES:%.c=%.o)
-
 CSRCS := $(wildcard *.c)
-COBJS := $(CSRCS:%.c=%.o)
-
 SSRCS := $(wildcard *.s)
-SOBJS := $(SSRCS:%.s=%.o)
-
 LDSRC := $(TARGET).ld
 
 GCC_OPTS := -mabi=ilp32 -march=rv32i -static -mcmodel=medany -nostdlib -nostartfiles -T $(LDSRC)
 
-default: $(TARGET)
+default: $(TARGET).elf
 
-LINK_DEPENDENCIES = $(COBJS) $(SOBJS)
+SOURCES = $(CSRCS) $(SSRCS)
 ifeq ($(INCLUDE_LIB), true)
-	LINK_DEPENDENCIES += $(LIB_OBJECTS)
+	SOURCES += $(LIB_SOURCES)
 endif
 
-$(TARGET): $(CSRCS) $(SSRCS)
-	$(RISCV)-gcc $(GCC_OPTS) $^ -o $@.elf
-	$(RISCV)-strip -R .comment $@.elf
-	$(RISCV)-objdump -D -Mnumeric $@.elf > $@.dump
-	$(RISCV)-elf2hex --bit-width 32 --input $@.elf > $@.hex
-
-$(LIB_PATH)/%.o: $(LIB_PATH)/%.c
-	$(RISCV)-gcc $(GCC_OPTS) $< -o $@
-
-%.o: %.c
-	$(RISCV)-gcc $(GCC_OPTS) -c -I$(LIB_PATH) $< -o $@
-
-%.o: %.s
-	$(RISCV)-gcc $(GCC_OPTS) $< -o $@
+# objdump is called before strip because it inlines functions and makes the assembly harder to read
+$(TARGET).elf: $(SOURCES)
+	$(RISCV)-gcc $(GCC_OPTS) -I$(LIB_PATH) $^ -o $@
+	$(RISCV)-objdump -D -Mnumeric $@ > $(basename $@).dump
+	$(RISCV)-strip -R .comment $@
+	$(RISCV)-elf2hex --bit-width 32 --input $@ > $(basename $@).hex
 
 clean:
-	rm -f $(COBJS) $(SOBJS) $(LIB_OBJECTS) $(TARGET).{elf,dump,hex}
+	rm -f *.elf *.dump *.hex
+
+.PHONY: target

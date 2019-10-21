@@ -3,7 +3,7 @@
 #include "string.h"
 #include "memory_map.h"
 
-int8_t* read_n(int8_t*b, uint32_t n) 
+int8_t* read_n(int8_t*b, uint32_t n)
 {
     for (uint32_t i = 0; i < n;  i++) {
         b[i] =  uread_int8();
@@ -99,14 +99,14 @@ int main(void)
             volatile uint16_t* p = (volatile uint16_t*)(address);
             *p = half;
         } else if (strcmp(input, "sb") == 0) {
-	  uint8_t byte = ascii_hex_to_uint8(read_token(buffer, BUFFER_LEN, " \x0d"));
-	  uint32_t address = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
+            uint8_t byte = ascii_hex_to_uint8(read_token(buffer, BUFFER_LEN, " \x0d"));
+            uint32_t address = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
 
-	  volatile uint8_t* p = (volatile uint8_t*)(address);
-	  *p = byte;
+            volatile uint8_t* p = (volatile uint8_t*)(address);
+            *p = byte;
         } else if (strcmp(input, "led") == 0) {
-	  uint32_t toggle_array = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
-	  LED_CONTROL = toggle_array;
+            uint32_t toggle_array = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
+            LED_CONTROL = toggle_array;
         } else {
             uwrite_int8s("\n\rUnrecognized token: ");
             uwrite_int8s(input);
