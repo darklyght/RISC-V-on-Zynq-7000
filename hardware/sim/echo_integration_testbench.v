@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns/10ps
 
 module echo_integration_testbench ();
     parameter SYSTEM_CLK_PERIOD = 8;
@@ -21,12 +21,11 @@ module echo_integration_testbench ();
 
     z1top #(
         .SYSTEM_CLOCK_FREQ(SYSTEM_CLK_FREQ),
-        .B_SAMPLE_COUNT_MAX(1),
-        .B_PULSE_COUNT_MAX(1)
+        .B_SAMPLE_COUNT_MAX(5),
+        .B_PULSE_COUNT_MAX(5)
     ) top (
-        .USER_CLK(sys_clk),
-        .RESET(sys_rst),
-        .BUTTONS(3'b0),
+        .CLK_125MHZ_FPGA(sys_clk),
+        .BUTTONS({3'b0, sys_rst}),
         .SWITCHES(2'b0),
         .LEDS(),
         .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
@@ -49,45 +48,71 @@ module echo_integration_testbench ();
         .serial_out(FPGA_SERIAL_RX)
     );
 
+    reg done = 0;
+    `define STRINGIFY_ECHO(x) `"x/../software/echo/echo.hex`"
     initial begin
+        $readmemh(`STRINGIFY_ECHO(`ABS_TOP), top.cpu.bios_mem.mem);
+
+        `ifndef IVERILOG
+            $vcdpluson;
+        `endif
+        `ifdef IVERILOG
+            $dumpfile("echo_integration_testbench.fst");
+            $dumpvars(0,echo_integration_testbench);
+        `endif
+
         // Reset all parts
         sys_rst = 1'b0;
         data_in = 8'h7a;
         data_in_valid = 1'b0;
         data_out_ready = 1'b0;
 
-        repeat (20) @(posedge sys_clk);
+        repeat (20) @(posedge sys_clk); #1;
 
         sys_rst = 1'b1;
-        repeat (30) @(posedge sys_clk);
+        repeat (50) @(posedge sys_clk); #1;
         sys_rst = 1'b0;
 
-        // Wait until off-chip UART's transmit is ready
-        while (!data_in_ready) @(posedge sys_clk);
+        fork
+            begin
+                // Wait until off-chip UART's transmit is ready
+                while (!data_in_ready) @(posedge sys_clk);
 
-        // Send a UART packet to the CPU from the off-chip UART
-        data_in_valid = 1'b1;
-        @(posedge sys_clk);
-        data_in_valid = 1'b0;
+                // Send a UART packet to the CPU from the off-chip UART
+                data_in_valid = 1'b1;
+                @(posedge sys_clk);
+                data_in_valid = 1'b0;
 
-        // Watch data_in (7A) be sent over FPGA_SERIAL_RX to the CPU's on-chip UART
+                // Watch data_in (7A) be sent over FPGA_SERIAL_RX to the CPU's on-chip UART
 
-        // The echo program running on the CPU is polling the memory mapped register (0x80000000)
-        // and waiting for data_out_valid of the on-chip UART to become 1. Once it does, the echo program
-        // performs a load from memory mapped register (0x80000004) to fetch the data that the on-chip UART
-        // received from the off-chip UART. Then, the same data is stored to memory mapped register (0x80000008),
-        // which should command the on-chip UART's transmitter to send the same data back to the off-chip UART.
+                // The echo program running on the CPU is polling the memory mapped register (0x80000000)
+                // and waiting for data_out_valid of the on-chip UART to become 1. Once it does, the echo program
+                // performs a load from memory mapped register (0x80000004) to fetch the data that the on-chip UART
+                // received from the off-chip UART. Then, the same data is stored to memory mapped register (0x80000008),
+                // which should command the on-chip UART's transmitter to send the same data back to the off-chip UART.
 
-        // Wait for the off-chip UART to receive the echoed data
-        while (!data_out_valid) @(posedge sys_clk);
-        $display("Got %h", data_out);
+                // Wait for the off-chip UART to receive the echoed data
+                while (!data_out_valid) @(posedge sys_clk);
+                $display("Got %h", data_out);
 
-        // Clear the off-chip UART's receiver for another UART packet
-        data_out_ready = 1'b1;
-        @(posedge sys_clk);
-        data_out_ready = 1'b0;
+                // Clear the off-chip UART's receiver for another UART packet
+                data_out_ready = 1'b1;
+                @(posedge sys_clk);
+                data_out_ready = 1'b0;
+                done = 1;
+            end
+            begin
+                repeat (100000) @(posedge sys_clk);
+                if (!done) begin
+                    $display("Failed: timing out");
+                    $finish();
+                end
+            end
+        join
 
+        `ifndef IVERILOG
+            $vcdplusoff;
+        `endif
         $finish();
     end
-
 endmodule
