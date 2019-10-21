@@ -4,3 +4,9 @@
 *.out
 *.pyg
 *.toc
+*.fst
+*.tbi
+*.tb
+*.vpd
+*.dump
+*.hex

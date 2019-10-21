@@ -9,20 +9,21 @@ RTL                     += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src 
 CONSTRAINTS             += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src -type f -name "*.xdc"))
 TOP                     ?= z1top
 VCS                     := vcs -full64
-VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1ns/10ps -debug -sverilog
-SIM_RTL                 := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
+VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1ns/10ps -debug -sverilog +define+ABS_TOP=$(ABS_TOP)
+SIM_RTL                 += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
+SIM_MODELS              := $(VIVADO_BASE)/data/verilog/src/unisims/BUFG.v $(VIVADO_BASE)/data/verilog/src/unisims/PLLE2_ADV.v $(VIVADO_BASE)/data/verilog/src/glbl.v
 IVERILOG                := iverilog
-IVERILOG_OPTS           := -D IVERILOG=1
+IVERILOG_OPTS           := -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP)
 VVP                     := vvp
 
 sim/%.tb: sim/%.v $(RTL)
-	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $*.v -top $*
+	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $*
 
 sim/%.vpd: sim/%.tb
 	cd sim && ./$*.tb +verbose=1 +vpdfile+$*.vpd
 
 sim/%.tbi: sim/%.v $(RTL)
-	cd sim && $(IVERILOG) $(IVERILOG_OPTS) -o $*.tbi $*.v $(RTL)
+	cd sim && $(IVERILOG) $(IVERILOG_OPTS) -o $*.tbi $*.v $(RTL) $(SIM_MODELS)
 
 sim/%.fst: sim/%.tbi
 	cd sim && $(VVP) $*.tbi -fst

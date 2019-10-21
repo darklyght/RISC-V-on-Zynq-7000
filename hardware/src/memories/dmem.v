@@ -4,7 +4,7 @@ module dmem (
   input [3:0] we,
   input [13:0] addr,
   input [31:0] din,
-  output [31:0] dout
+  output reg [31:0] dout
 );
   reg [31:0] mem [16384-1:0];
 

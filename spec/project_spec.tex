@@ -353,7 +353,7 @@ Your CPU will need to be able to access multiple sources for data as well as con
 In order to do this, we will partition the 32-bit address space into four regions: data memory read and writes, instruction memory writes, BIOS memory reads, and memory-mapped I/O.
 This will be encoded in the top nibble (4 bits) of the memory address generated in load and store operations, as shown in Table \ref{mem_space1}.
 In other words, the target memory/device of a load or store instruction is dependent on the address.
-For this checkpoint, the reset signal should reset the PC to the start of BIOS memory (\verb|0x40000000|).
+The reset signal should reset the PC to the value defined by the parameter \verb|RESET_PC| which is by default the start of BIOS memory (\verb|0x40000000|).
 
 \begin{table}[hbt]
   \begin{center}
@@ -468,8 +468,8 @@ There are several files:
       For checkpoint 2, this address should be in the format \verb|0x1000xxxx|
       The .text segment offset is typically set to the base of the instruction memory address space.
 
-    \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -D c_example.elf| to view the assembly code.
-    \item \verb|c_example.asmdump|: Assembly dump of the binary.
+    \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
+    \item \verb|c_example.dump|: Assembly dump of the binary.
 \end{itemize}
 
 \subsection{Assembly Tests}
@@ -913,6 +913,29 @@ Not included in the above tabulations are point assignments for extra credit as 
 \newpage
 
 \appendix
+\section{Local Development}
+You can build the project on your laptop but there are a few dependencies to install.
+In addition to Vivado and Icarus Verilog, you need a RISC-V GCC cross compiler and an \verb|elf2hex| utility.
+
+\subsection{Linux}
+A system package provides the RISC-V GCC toolchain (Ubuntu): \verb|sudo apt install gcc-riscv64-linux-gnu|.
+There are packages for other distros too.
+
+To install \verb|elf2hex|:
+\begin{minted}{bash}
+git clone git@github.com:sifive/elf2hex.git
+cd elf2hex
+autoreconf -i
+./configure --target=riscv64-linux-gnu
+make
+vim elf2hex # Edit line 7 to remove 'unknown'
+sudo make install
+\end{minted}
+
+\subsection{OSX, Windows}
+Download SiFive's GNU Embedded Toolchain \href{https://www.sifive.com/boards}{from here}.
+See the 'Prebuilt RISC-V GCC Toolchain and Emulator' section.
+
 \section{Tone Generator \& I2S Extra Credit}\label{audio_extra_credit}
 This section details an extra credit opportunity for you to integrate your tone generator and I2S controller from the lab assignments with your RISCV processor.
 

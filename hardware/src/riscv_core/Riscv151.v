@@ -49,6 +49,17 @@ module Riscv151 #(
     );
 
     // Construct your datapath, add as many modules as you want
+    wire we;
+    wire [4:0] ra1, ra2, wa;
+    wire [31:0] wd;
+    wire [31:0] rd1, rd2;
+    reg_file rf (
+        .clk(clk),
+        .we(we),
+        .ra1(ra1), .ra2(ra2), .wa(wa),
+        .wd(wd),
+        .rd1(rd1), .rd2(rd2)
+    );
 
     // On-chip UART
     uart #(

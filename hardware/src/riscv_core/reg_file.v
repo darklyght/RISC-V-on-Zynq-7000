@@ -5,6 +5,7 @@ module reg_file (
     input [31:0] wd,
     output [31:0] rd1, rd2
 );
+    reg [31:0] registers [0:31];
     assign rd1 = 32'd0;
     assign rd2 = 32'd0;
 endmodule

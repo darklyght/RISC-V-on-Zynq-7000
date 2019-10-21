@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 /* MODIFY THIS LINE WITH THE HIERARCHICAL PATH TO YOUR REGFILE ARRAY INDEXED WITH reg_number */
-`define REGFILE_ARRAY_PATH CPU.dpath.RF.reg_file[reg_number]
+`define REGFILE_ARRAY_PATH CPU.rf.registers[reg_number]
 
 module assembly_testbench();
     reg clk, rst;
@@ -41,7 +41,19 @@ module assembly_testbench();
         while (`REGFILE_ARRAY_PATH !== expected_value) @(posedge clk);
     endtask
 
+    reg done = 0;
+    `define STRINGIFY_ASM(x) `"x/../software/assembly_tests/assembly_tests.hex`"
     initial begin
+        $readmemh(`STRINGIFY_ASM(`ABS_TOP), CPU.bios_mem.mem);
+
+        `ifndef IVERILOG
+            $vcdpluson;
+        `endif
+        `ifdef IVERILOG
+            $dumpfile("assembly_testbench.fst");
+            $dumpvars(0,assembly_testbench);
+        `endif
+
         rst = 0;
 
         // Reset the CPU
@@ -49,18 +61,33 @@ module assembly_testbench();
         repeat (30) @(posedge clk);             // Hold reset for 30 cycles
         rst = 0;
 
-        // Your processor should begin executing the code in /software/assembly_tests/start.s
+        fork
+            begin
+                // Your processor should begin executing the code in /software/assembly_tests/start.s
 
-        // Test ADD
-        wait_for_reg_to_equal(20, 32'd1);       // Run the simulation until the flag is set to 1
-        check_reg(1, 32'd300, 1);               // Verify that x1 contains 300
+                // Test ADD
+                wait_for_reg_to_equal(20, 32'd1);       // Run the simulation until the flag is set to 1
+                check_reg(1, 32'd300, 1);               // Verify that x1 contains 300
 
-        // Test BEQ
-        wait_for_reg_to_equal(20, 32'd2);       // Run the simulation until the flag is set to 2
-        check_reg(1, 32'd500, 2);               // Verify that x1 contains 500
-        check_reg(2, 32'd100, 3);               // Verify that x2 contains 100
+                // Test BEQ
+                wait_for_reg_to_equal(20, 32'd2);       // Run the simulation until the flag is set to 2
+                check_reg(1, 32'd500, 2);               // Verify that x1 contains 500
+                check_reg(2, 32'd100, 3);               // Verify that x2 contains 100
+                $display("ALL ASSEMBLY TESTS PASSED");
+                done = 1;
+            end
+            begin
+                repeat (1000) @(posedge clk);
+                if (!done) begin
+                    $display("Failed: timing out");
+                    $finish();
+                end
+            end
+        join
 
-        $display("ALL ASSEMBLY TESTS PASSED");
+        `ifndef IVERILOG
+            $vcdplusoff;
+        `endif
         $finish();
     end
 endmodule
