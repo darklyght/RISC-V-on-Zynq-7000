@@ -1,0 +1,45 @@
+LIB_PATH := ../151_library
+LIB_SOURCES := $(wildcard ../151_library/*.c)
+LIB_HEADERS := $(wildcard ../151_library/*.h)
+LIB_OBJECTS := $(LIB_SOURCES:%.c=%.c.o)
+LIB_ARCHIVE := ../151_library/151_library.a
+
+CSRCS := $(wildcard *.c)
+COBJS := $(CSRCS:%.c=%.c.o)
+
+SSRCS := $(wildcard *.s)
+SOBJS := $(SSRCS:%.s=%.s.o)
+
+LDSRC := $(TARGET).ld
+
+default: $(TARGET)
+
+LINK_DEPENDENCIES = $(COBJS) $(SOBJS)
+ifeq ($(INCLUDE_LIB), true)
+	LINK_DEPENDENCIES += $(LIB_OBJECTS)
+endif
+
+$(TARGET): $(LINK_DEPENDENCIES)
+	riscv-gcc -m32 -nostdlib -nostartfiles -T $(LDSRC) $^ -o $@.elf
+	riscv-strip -R .pdr -R .comment -R .reginfo $@.elf
+	riscv-objcopy -O binary $(TARGET).elf $(TARGET).bin
+	bin2mif-riscv < $(TARGET).bin > $(TARGET).mif
+	bin2coe-riscv < $(TARGET).bin > $(TARGET).coe
+	#bin2rom-riscv $(TARGET) 0 < $(TARGET).bin > $(TARGET).v
+	riscv-objdump -D $(TARGET).elf > $(TARGET).asmdump
+
+# Compile the static library, this isn't used but it could be useful later
+$(LIB_ARCHIVE): $(LIB_OBJECTS) $(LIB_HEADERS)
+	riscv-ar rcs $@ $^
+
+$(LIB_PATH)/%.c.o: $(LIB_PATH)/%.c
+	riscv-gcc -m32 -c $< -o $@ -std=c99
+
+%.c.o: %.c
+	riscv-gcc -m32 -c -I$(LIB_PATH) $< -o $@ -std=c99
+
+%.s.o: %.s
+	riscv-as -m32 $< -o $@
+
+clean:
+	rm -f $(COBJS) $(SOBJS) $(LIB_ARCHIVE) $(LIB_OBJECTS) $(TARGET).elf $(TARGET).{bin,mif,v,coe,asmdump}

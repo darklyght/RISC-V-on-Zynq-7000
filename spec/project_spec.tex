@@ -500,7 +500,7 @@ If the testbench timed out it means \verb|x20| never became 1, so the processor 
 
 We have provided a BIOS program in \verb|software/bios151v3| that allows you to interact with your CPU and download other programs over UART.
 The BIOS is basically just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs the action.
-%For more detailed information on the BIOS, check out this \href{http://www-inst.eecs.berkeley.edu/~cs150/fa12/project/BIOSInfo.pdf}{supplement}.
+For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
 \textbf{TODO: attach BIOS document in the appendix of this spec}
 
 To run the BIOS:
@@ -911,7 +911,9 @@ Not included in the above tabulations are point assignments for extra credit as 
 \end{table}
 
 \newpage
-\section{Appendix A - Tone Generator \& I2S Extra Credit}\label{audio_extra_credit}
+
+\appendix
+\section{Tone Generator \& I2S Extra Credit}\label{audio_extra_credit}
 This section details an extra credit opportunity for you to integrate your tone generator and I2S controller from the lab assignments with your RISCV processor.
 
 \subsection{Summary}
@@ -1020,5 +1022,30 @@ The program will print out information as you transition the state machine, edit
 \item Demonstrate the music streamer program.
 \item Demonstrate the piano program.
 \end{itemize}
+
+\section{BIOS}
+\label{sec:biosinfo}
+This section was written by Vincent Lee, Ian Juch, and Albert Magyar.
+
+\subsection{Background}
+For the first checkpoint we have provided you a BIOS written in C that your processor is
+instantiated with. BIOS stands for Basic Input/Output System and forms the bare bones of the
+CPU system on initial boot up. The primary function of the BIOS is to locate, and initialize the
+system and peripheral devices essential to the PC operation such as memories, hard drives, and
+the CPU cores.
+
+Once these systems are online, the BIOS locates a boot loader that initializes the operating
+system loading process and passes control to it. For our project, we do not have to worry about
+loading the BIOS since the FPGA eliminates that problem for us. Furthermore, we will not deal
+too much with boot loaders, peripheral initialization, and device drivers as that is beyond the
+scope of this class. The BIOS for our project will simply allow you to get a taste of how the
+software and hardware layers come together.
+
+The reason why we instantiate the memory with the BIOS is to avoid the problem of
+bootstrapping the memory which is required on most computer systems today. Throughout the
+next few checkpoints we will be adding new memory mapped hardware that our BIOS will
+interface with. This document is intended to explain the BIOS for checkpoint 1 and how it
+interfaces with the hardware. In addition, this document will provide you pointers if you wish to
+modify the BIOS at any point in the project.
 
 \end{document}

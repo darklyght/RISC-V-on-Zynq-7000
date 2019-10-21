@@ -1,0 +1,4 @@
+build/**/*
+sim/build/
+sim/results/
+sim/build/**/*
