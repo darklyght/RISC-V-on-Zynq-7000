@@ -20,13 +20,13 @@ sim/%.tb: sim/%.v $(RTL)
 	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $*
 
 sim/%.vpd: sim/%.tb
-	cd sim && ./$*.tb +verbose=1 +vpdfile+$*.vpd
+	cd sim && ./$*.tb +verbose=1 +vpdfile+$*.vpd |& tee $*.log
 
 sim/%.tbi: sim/%.v $(RTL)
 	cd sim && $(IVERILOG) $(IVERILOG_OPTS) -o $*.tbi $*.v $(RTL) $(SIM_MODELS)
 
 sim/%.fst: sim/%.tbi
-	cd sim && $(VVP) $*.tbi -fst
+	cd sim && $(VVP) $*.tbi -fst |& tee $*.log
 
 build/target.tcl: $(RTL) $(CONSTRAINTS)
 	mkdir -p build
@@ -77,10 +77,14 @@ sim_build/compile_simlib/synopsys_sim.setup:
 compile_simlib: sim_build/compile_simlib/synopsys_sim.setup
 
 clean:
-	rm -rf ./build $(junk) *.daidir sim/output.txt \
+	rm -rf ./build
+
+clean-sim:
+	rm -rf *daidir sim/output.txt \
 	sim/*.tb sim/*.daidir sim/csrc \
 	sim/ucli.key sim/*.vpd sim/*.vcd \
 	sim/*.tbi sim/*.fst sim/*.jou sim/*.log sim/*.out
+
 
 .PHONY: setup synth impl program program-force vivado all clean %.tb
 .PRECIOUS: sim/%.tb sim/%.tbi sim/%.fst sim/%.vpd
