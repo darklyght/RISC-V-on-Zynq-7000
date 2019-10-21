@@ -109,16 +109,15 @@ This project, as has been done in past semesters, will be divided into checkpoin
 \section{Checkpoints 1 \& 2 - 3-stage Pipelined RISC-V CPU}
 The first checkpoint in this project is designed to guide the development of a three-stage pipelined RISC-V CPU that will be used as a base system in subsequent checkpoints.
 
-\textbf{TODO: REPLACE THIS DIAGRAM}
 \begin{figure}[hbt]
 \begin{center}
-  \includegraphics[width=4in]{riscv151overview.png}
+  \includegraphics[width=0.7\textwidth]{fa19_overview.pdf}
   \caption{High-level overview of the full system}
   \label{fig:sys_overview}
 \end{center}
 \end{figure}
 
-The green (RISC-V core) and yellow (UART/counters) blocks on the diagram are the focus of the first and second checkpoints.
+The green (RISC-V core) block on the diagram is the focus of the first and second checkpoints.
 The third checkpoint will add audio and IO components in blue.
 Finally, the fourth checkpoint will implement the power management unit in red.
 
@@ -285,7 +284,6 @@ This means that every unique 32 bit address the processor computes (in the ALU) 
 For us, the bottom 16 bits of the addresses computed by the CPU are relevant for RAM access.
 The top 14 bits are the word address (for indexing into one row of the block RAM), and the bottom two are the byte offset (for indexing to a particular byte in a 32 bit row).
 
-\textbf{TODO: replace this diagram}
 \label{endianness}
 \begin{figure}[H]
   \begin{center}
@@ -323,11 +321,10 @@ Although this is an intuitive representation, it does not let us modify instruct
 Your CPU, by the end of this checkpoint, will be able to receive compiled RISC-V binaries though the UART, store them into instruction memory, then jump to the downloaded program.
 To facilitate this, we will adopt a modified memory architecture shown in Figure \ref{fig:mem_arch}:
 
-\textbf{TODO: replace this diagram}
 \begin{figure}[hbt]
   \begin{center}
-    \includegraphics[width=6in]{RISCMemoryArchitectureBigMemLarge}
-    \caption{Memory Architecture}
+    \includegraphics[width=0.8\textwidth]{memory_arch.pdf}
+    \caption{Memory Architecture. There is only 1 IMEM and DMEM instance but their ports are shown separately in this figure for clarity. The left half shows the instruction fetch logic and the right half shows the memory load/store logic.}
     \label{fig:mem_arch}
   \end{center}
 \end{figure}
@@ -501,7 +498,6 @@ If the testbench timed out it means \verb|x20| never became 1, so the processor 
 We have provided a BIOS program in \verb|software/bios151v3| that allows you to interact with your CPU and download other programs over UART.
 The BIOS is basically just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs the action.
 For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
-\textbf{TODO: attach BIOS document in the appendix of this spec}
 
 To run the BIOS:
 \begin{enumerate}
@@ -713,7 +709,78 @@ This program has several commands to help you debug and verify functionality:
 \end{itemize}
 
 \subsection{PWM Controller}
+\subsubsection{Testing the PWM Controller}
+\textbf{This section will be updated}
+We have provided a program to test your tone generator and its memory map. It can be found in \verb|software/tone_gen_test/|. Compile and run the program just as you did for the \verb|user_io_test|. Make sure the first slide switch is on. \verb|jal| to the program from the BIOS, and you can play with these commands:
+
+\begin{itemize}
+  \item \verb|on| - Flips the output enable register high
+  \item \verb|off| - Flips low the output enable register low
+  \item \verb|tone <tone_switch_period>| - Writes the user specified \verb|tone_switch_period| (32-bits in hex) to the tone switch period address
+  \item \verb|exit| - Jumps back to the BIOS
+\end{itemize}
+
+Calculate the \verb|tone_switch_period| for a 440Hz tone with a 50 MHz clock and try sending the command for that through the test program. Verify that the piezo speaker is buzzing at 440Hz by comparing it to a square wave at the same frequency via a \href{http://onlinetonegenerator.com/}{tone generator}.
+
 \subsubsection{Piano Program}
+
+\subsubsection{Music Streamer in Software}
+Now that we have access to user I/Os and access to the tone generator, we can fully implement the music streamer and sequencer FSM from lab 4 entirely in software!
+
+The music streamer program can be found in \verb|software/music_streamer|. To use this program, use the same scripts from Lab 3 to generate a music data file from a MusicXML file, and then convert that data file to a static array declaration that can be used in a C program.
+
+\begin{minted}[frame=single]{bash}
+python scripts/musicxml_parser.py musicxml/Row_Row_Row_Your_Boat.mxl music.txt
+\end{minted}
+
+You will now have a \verb|music.txt| file in the \verb|/software/music_streamer| directory with the music data. Now we use the \verb|c_array_generator.py| script to create a static array declaration using this file.
+
+\begin{minted}[frame=single]{bash}
+python scripts/c_array_generator.py music.h music.txt
+\end{minted}
+
+Now, we have a file called \verb|music.h| that has a static array declaration filled with the music data. This serves exactly the same purpose as the ROM that was generated in Lab 3.
+
+To build the \verb|music_streamer| program and place it on your processor, execute:
+\begin{minted}[frame=single]{bash}
+make
+coe_to_serial music_streamer.coe 3000a000
+screen $SERIALTTY 115200
+151> jal 1000a000
+\end{minted}
+
+The \verb|music_streamer| functions exactly like it does in Lab 3, but the state machine that was implemented directly in hardware, is now implemented in software. Here is the state machine diagram for reference:
+
+\begin{center}
+  \begin{tikzpicture}[shorten >=1pt, node distance=10cm,on grid, auto, semithick]
+  \tikzstyle{state} = [draw, very thick, fill=white, rectangle, minimum height=3em, minimum width=7em, node distance=12em, font={\sffamily\bfseries}]
+  \tikzstyle{stateEdgePortion} = [black,thick];
+  \tikzstyle{stateEdge} = [stateEdgePortion,->];
+  \tikzstyle{edgeLabel} = [pos=0.5, text centered, font={\sffamily\small}];
+
+  \node[state,initial](rp) {REGULAR\_PLAY};
+  \node[state](revp) [below =of rp]{REVERSE\_PLAY};
+  \node[state](p) [right=of rp]{PAUSED};
+  \node[state](playseq) [above=of rp]{PLAY\_SEQ};
+  \node[state](editseq) [left=of rp]{EDIT\_SEQ};
+
+  \path[->]
+  (playseq) edge node [swap] {play\_pause} (p)
+  edge node [swap] {switch\_mode} (editseq)
+  edge node {} (rp)
+  (editseq) edge node {} (playseq)
+  (rp) edge node {play\_pause} (p)
+  edge [swap] node {switch\_mode} (revp)
+  edge node {switch\_fn} (playseq)
+  (p) edge node {} (rp)
+  edge [bend right, swap] node {switch\_fn} (playseq)
+  (revp) edge [swap] node {play\_pause} (p)
+  edge [swap] node {} (rp);
+  \end{tikzpicture}
+\end{center}
+
+The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
+
 
 \subsection{Subtractive Synth}
 
@@ -936,116 +1003,6 @@ sudo make install
 Download SiFive's GNU Embedded Toolchain \href{https://www.sifive.com/boards}{from here}.
 See the 'Prebuilt RISC-V GCC Toolchain and Emulator' section.
 
-\section{Tone Generator \& I2S Extra Credit}\label{audio_extra_credit}
-This section details an extra credit opportunity for you to integrate your tone generator and I2S controller from the lab assignments with your RISCV processor.
-
-\subsection{Summary}
-You will add the \verb|tone_generator| created in lab to the design as a peripheral and allow programs to access its \verb|tone_switch_period| and \verb|output_enable| inputs over memory mapped I/O. You will be able use your processor to simulate the \verb|music_streamer| FSM built in lab using software only.
-
-Once you have the tone generator working, you will be able to load a program onto your processor which allows you to use your keyboard as a piano. The program synthesizes sine waves of various frequencies based on what key you are pressing and will transmit the wave to the codec so you can hear the music you play through your headphones.
-
-Get started by pulling the latest skeleton files from the staff repository: \verb|git pull staff master|.
-
-\subsection{Tone Generator Hookup}
-Copy over your \verb|tone_generator.v| from Lab 5 to the \verb|hardware/src/audio/| directory. Recall that your \verb|tone_generator| takes a \verb|tone_switch_period| which describes how many clock cycles the \verb|tone_generator| takes to invert its \verb|square_wave_out| output. There is also an \verb|output_enable| input into the \verb|tone_generator| which gates the \verb|square_wave_out| output low.
-
-We want to give our RISC-V core the ability to set the \verb|tone_switch_period| and the \verb|output_enable| of the tone generator. Here is the addition to the memory map:
-
-\begin{table}[hbt]
-  \begin{center}
-    \caption{Tone Generator Memory Map Additions}
-    \label{mem_map2_2}
-    \begin{tabular}{l l l l}
-      \toprule
-      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
-      \midrule
-      32'h80000034 & Tone Generator Output Enable & Write & \{31'b0, output\_enable\} \\
-      32'h80000038 & Tone Generator Tone Switch Period & Write & \{8'b0, tone\_switch\_period[23:0]\} \\ \bottomrule
-    \end{tabular}
-  \end{center}
-\end{table}
-
-Modify \verb|z1top.v| and \verb|Riscv151.v|. Instantiate the \verb|tone_generator| at the top level and connect \verb|square_wave_out| to the \verb|AUDIO_PWM| output. The \verb|output_enable| signal should be connected to the AND of \verb|BUTTONS[0]| and the register that's written by the CPU. The \verb|tone| signal should be connected to another register that's written by the CPU via memory mapped I/O.
-
-Modify your CPU to take in and output any signals it needs for this tone generator hookup.
-
-\subsubsection{Testing the Tone Generator}
-We have provided a program to test your tone generator and its memory map. It can be found in \verb|software/tone_gen_test/|. Compile and run the program just as you did for the \verb|user_io_test|. Make sure the first slide switch is on. \verb|jal| to the program from the BIOS, and you can play with these commands:
-
-\begin{itemize}
-  \item \verb|on| - Flips the output enable register high
-  \item \verb|off| - Flips low the output enable register low
-  \item \verb|tone <tone_switch_period>| - Writes the user specified \verb|tone_switch_period| (32-bits in hex) to the tone switch period address
-  \item \verb|exit| - Jumps back to the BIOS
-\end{itemize}
-
-Calculate the \verb|tone_switch_period| for a 440Hz tone with a 50 MHz clock and try sending the command for that through the test program. Verify that the piezo speaker is buzzing at 440Hz by comparing it to a square wave at the same frequency via a \href{http://onlinetonegenerator.com/}{tone generator}.
-
-\subsubsection{Music Streamer in Software}
-Now that we have access to user I/Os and access to the tone generator, we can fully implement the music streamer and sequencer FSM from lab 4 entirely in software!
-
-Kind of... We still don't have enough buttons so are limited in the functionality we can implement. The workaround is to not include the sequencer from lab 4 (which was an optional part anyway). Since button 3 is now our reset, we can use buttons 0-2 to implement the rest of the functionality. The software version of the music streamer maps button 0 to play/pause, button 1 to reverse, and button 2 to tempo reset. As you'll have noticed, there is no way to change the tempo, so if you would like to add that functionality, feel free to edit the .c file. You can use the switches as we did in the lab, but keep in mind that they behave differently to the buttons. How you do this part is up to you, but it is enough to show a version with only play/pause, reverse, and tempo reset. Ask a GSI if you need help.
-
-The music streamer program can be found in \verb|software/music_streamer|. To use this program, use the same scripts from Lab 3 to generate a music data file from a MusicXML file, and then convert that data file to a static array declaration that can be used in a C program.
-
-\begin{minted}[frame=single]{bash}
-python scripts/musicxml_parser.py musicxml/Row_Row_Row_Your_Boat.mxl music.txt
-\end{minted}
-
-You will now have a \verb|music.txt| file in the \verb|/software/music_streamer| directory with the music data. Now we use the \verb|c_array_generator.py| script to create a static array declaration using this file.
-
-\begin{minted}[frame=single]{bash}
-python scripts/c_array_generator.py music.h music.txt
-\end{minted}
-
-Now, we have a file called \verb|music.h| that has a static array declaration filled with the music data. This serves exactly the same purpose as the ROM that was generated in Lab 3.
-
-To build the \verb|music_streamer| program and place it on your processor, execute:
-\begin{minted}[frame=single]{bash}
-make
-coe_to_serial music_streamer.coe 3000a000
-screen $SERIALTTY 115200
-151> jal 1000a000
-\end{minted}
-
-The \verb|music_streamer| functions exactly like it does in Lab 3, but the state machine that was implemented directly in hardware, is now implemented in software. Here is the state machine diagram for reference:
-
-\begin{center}
-  \begin{tikzpicture}[shorten >=1pt, node distance=10cm,on grid, auto, semithick]
-  \tikzstyle{state} = [draw, very thick, fill=white, rectangle, minimum height=3em, minimum width=7em, node distance=12em, font={\sffamily\bfseries}]
-  \tikzstyle{stateEdgePortion} = [black,thick];
-  \tikzstyle{stateEdge} = [stateEdgePortion,->];
-  \tikzstyle{edgeLabel} = [pos=0.5, text centered, font={\sffamily\small}];
-
-  \node[state,initial](rp) {REGULAR\_PLAY};
-  \node[state](revp) [below =of rp]{REVERSE\_PLAY};
-  \node[state](p) [right=of rp]{PAUSED};
-  \node[state](playseq) [above=of rp]{PLAY\_SEQ};
-  \node[state](editseq) [left=of rp]{EDIT\_SEQ};
-
-  \path[->]
-  (playseq) edge node [swap] {play\_pause} (p)
-  edge node [swap] {switch\_mode} (editseq)
-  edge node {} (rp)
-  (editseq) edge node {} (playseq)
-  (rp) edge node {play\_pause} (p)
-  edge [swap] node {switch\_mode} (revp)
-  edge node {switch\_fn} (playseq)
-  (p) edge node {} (rp)
-  edge [bend right, swap] node {switch\_fn} (playseq)
-  (revp) edge [swap] node {play\_pause} (p)
-  edge [swap] node {} (rp);
-  \end{tikzpicture}
-\end{center}
-
-The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
-
-\subsection{Tone Generator and I2S Extra Credit Deliverables}
-\begin{itemize}
-\item Demonstrate the music streamer program.
-\item Demonstrate the piano program.
-\end{itemize}
-
 \section{BIOS}
 \label{sec:biosinfo}
 This section was written by Vincent Lee, Ian Juch, and Albert Magyar.
@@ -1071,4 +1028,126 @@ interface with. This document is intended to explain the BIOS for checkpoint 1 a
 interfaces with the hardware. In addition, this document will provide you pointers if you wish to
 modify the BIOS at any point in the project.
 
+\subsection{Loading the BIOS}
+For the first checkpoint, the BIOS is loaded into the Instruction memory when you first build it.
+As shown in the Checkpoint 1 specification, this is made possible by instantiating your
+instruction memory to the BIOS file by building the block RAM with the biosv3.coe file. If you
+want to instantiate a modified BIOS you will have to change this .coe file in your block RAM
+directory and rebuild your design and the memory.
+
+To do this, simply cd to the /software/biosv3 directory and make the .coe file by running
+“make”. This should generate the .coe file using the compiler tailored to our ISA. Copy the
+resulting .coe file to the instruction memory block RAM directory and build the block RAM. The
+block RAM will then be built instantiated with the contents of the .coe file.
+When you get your design to synthesize and impact to the board, open up screen using the
+same command from Lab 5:
+
+\verb|screen $SERIALTTY 115200|
+
+Once you are in \verb|screen|, if you CPU design is working correctly you should be able to hit Enter
+and a carrot prompt `>' will show up on the screen. If this doesn’t work, try hitting the reset
+button on the FPGA which is the center compass switch and hit enter. If you can’t get the BIOS
+carrot to come up, then your design is not working and you will have to fix it.
+
+\subsection{Loading Your Own Programs}
+The BIOS that we provide you is written so that you can actually load your own programs for
+testing purposes and benchmarking. Once you instantiate your BIOS block RAM with the
+\verb|biosv3.coe| file and synthesize your design, you can transfer your own program files over the
+serial line.
+
+To load you own programs into the memory, you need to first have the .coe file for the program
+compiled. You can do this by copying the software directory of one of our C programs folders in
+/software directory and editing the files. You can write your own MIPS program by writing
+test code to the .s file or write your own c code by modifying the .c file.
+Once you have the .coe file for your program, impact your board with your design and run:
+
+\verb|coe_to_serial <file name> <target address>|
+
+The <file name> field corresponds to the .coe file that you are to uploading to the instruction
+memory. The <target address> field corresponds to the location in memory you want to write
+your program to.
+
+Once you have uploaded the file, you can fire up screen and run the command:
+
+\verb|jal <target hex address>|
+
+Where the <target hex address> is where you stored the location of the coe file over
+serial. Note that our design does not implement memory protection so try to avoid storing your
+program over your BIOS memory. Also note that the instruction memory size for the first
+checkpoint is limited in address size so large programs may fail to load.
+The jal command will change the PC to where your program is stored in the instruction
+memory.
+
+\subsection{The BIOS Program}
+The BIOS itself is a fairly simple program and composes of a glorified infinite loop that waits for
+user input. If you open the biosv3.c file, you will see that the main method composes of a
+large for loop that prints a prompt and gets user input by calling the \verb|read_token| method.
+If at any time your program execution or BIOS hangs or behaves unexpected, you can hit the
+reset button on your board to reset the program execution to the main method.
+The \verb|read_token| method continuously polls the UART for user input from the keyboard until it
+sees the character specified by ds. In the case of the BIOS, the termination character
+\verb|read_token| is called with is the 0xd character which corresponds to Enter.
+The \verb|read_token| method will then return the values that it received from the user. Note that
+there is no backspace option so if you make a mistake you will have to wait until the next
+command to fix it.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{bios_flow.png}
+  \caption{BIOS Execution Flow}
+\end{figure}
+
+The buffer returned from the \verb|read_token| method with the user input is then parsed by
+comparing the returned buffer against commands that the BIOS recognizes. If the BIOS parses a
+command successfully it will execute the appropriate subroutine or commands. Otherwise it
+will tell you that the command you input is not recognized.
+If you want to add commands to the BIOS at any time in the project, you will have to add to the
+comparisons that follow after the \verb|read_token| subroutine in the BIOS.
+
+\subsection{The UART}
+You will notice that some of the BIOS execution calls will call subroutines in the uart.c file
+which takes care of the transmission and reception of byte over the serial line.
+The uart.c file contains three subroutines. The first subroutine, \verb|uwrite_int8| executes a
+UART transmission for a single byte by writing to the output data register. The second
+subroutine \verb|uwrite_int8s| allows you to process an array of type \verb|int8_t| or chars and send
+them over the serial line. The third routine \verb|uread_int8| polls the UART for valid data and
+reads a byte from the serial line.
+
+In essence, these three routines are operating the UART on your design from a software view
+using the memory mapped I/O. Therefore, in order for the software to operate the memory
+map correctly, the \verb|uart.c| module must store and load from the correct addresses as defined
+by out memory map. You will find the necessary memory map addresses in the uart.h file that
+conforms to the design specification.
+
+\subsection{Command List}
+The following commands are built into the BIOS that we provide for you. All values are
+interpreted in hexadecimal and do not require any radix prefix (ex. “0x”). Note that there is not
+backspace command.
+
+\verb|jal <hexadecimal address>| - Moves program execution to the specified address
+
+\verb|lw <hexadecimal address>| - Displays word at specified address to screen
+
+\verb|lhu <hexadecimal address>| - Displays half at specified address to screen
+
+\verb|lbu <hexadecimal address>| - Displays byte at specified address to screen
+
+\verb|sw <value> <hexadecimal address>| - Stores specified word to address in memory
+
+\verb|sh <value> <hexadecimal address>| - Stores specified half to address in memory
+
+\verb|sb <value> <hexadecimal address>| - Stores specified byte to address in memory
+
+There is another command file in the main() method that is used only when you execute
+\verb|coe_to_serial|. When you execute \verb|coe_to_serial|, your workstation will initiate a byte
+transfer by calling this command in the BIOS. Therefore, don’t mess with this command too
+much as it is one of the more critical components of your BIOS.
+
+\subsection{Adding Your Own Features}
+Feel free to modify the BIOS code if you want to add your own features during the project for
+fun or to make your life easier. If you do choose to modify the BIOS, make sure to preserve
+essential functionality such as the I/O and the ability to store programs. In order to add
+features, you can either add to the code in the biosv3.c file or create your own c source and
+header files. Note that you do not have access to standard c libraries so you will have to add
+them yourself if you need additional library functionality.
 \end{document}
