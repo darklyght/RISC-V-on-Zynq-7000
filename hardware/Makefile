@@ -45,24 +45,24 @@ build/target.tcl: $(RTL) $(CONSTRAINTS)
 
 setup: build/target.tcl
 
-build/synth/$(TOP).dcp: build/target.tcl $(ABS_TOP)/scripts/synth.tcl
+build/synth/$(TOP).dcp: build/target.tcl $(ABS_TOP)/../scripts/synth.tcl
 	mkdir -p ./build/synth/
-	cd ./build/synth/ && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/scripts/synth.tcl |& tee synth.log
+	cd ./build/synth/ && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/../scripts/synth.tcl |& tee synth.log
 
 synth: build/synth/$(TOP).dcp
 
-build/impl/$(TOP).bit: build/synth/$(TOP).dcp $(ABS_TOP)/scripts/impl.tcl
+build/impl/$(TOP).bit: build/synth/$(TOP).dcp $(ABS_TOP)/../scripts/impl.tcl
 	mkdir -p ./build/impl/
-	cd ./build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/scripts/impl.tcl |& tee impl.log
+	cd ./build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/../scripts/impl.tcl |& tee impl.log
 
 impl: build/impl/$(TOP).bit
 all: build/impl/$(TOP).bit
 
-program: build/impl/$(TOP).bit $(ABS_TOP)/scripts/program.tcl
-	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/scripts/program.tcl
+program: build/impl/$(TOP).bit $(ABS_TOP)/../scripts/program.tcl
+	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/../scripts/program.tcl
 
 program-force:
-	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/scripts/program.tcl
+	cd build/impl && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/../scripts/program.tcl
 
 vivado: build
 	cd build && nohup $(VIVADO) </dev/null >/dev/null 2>&1 &
@@ -72,7 +72,7 @@ lint:
 
 sim_build/compile_simlib/synopsys_sim.setup:
 	mkdir -p sim_build/compile_simlib
-	cd build/sim_build/compile_simlib && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/scripts/compile_simlib.tcl
+	cd build/sim_build/compile_simlib && $(VIVADO) $(VIVADO_OPTS) -source $(ABS_TOP)/../scripts/compile_simlib.tcl
 
 compile_simlib: sim_build/compile_simlib/synopsys_sim.setup
 
