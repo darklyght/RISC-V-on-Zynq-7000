@@ -187,7 +187,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
     \end{itemize}
   \item \texttt{software}
     \begin{itemize}
-      \item \verb|bios151v3|: The BIOS program, which allows us to interact with our CPU via the UART. You need to compile it compile it before creating a bitstream or running a simulation.
+      \item \verb|bios151v3|: The BIOS program, which allows us to interact with our CPU via the UART. You need to compile it before creating a bitstream or running a simulation.
       \item \verb|echo|: The echo program, which emulates the FSM from Lab 5 in software.
       \item \verb|assembly_tests|: Use this as a template to write assembly tests for your processor designed to run in simulation.
       \item \verb|c_example|: Use this as an example to write C programs.
@@ -258,8 +258,6 @@ To test your register file, you should write a testbench to verify the following
   \item Reads should be asynchronous (the value at the output one simulation timestep (\#1) after feeding in an input address should be the value stored in that register)
 \end{itemize}
 
-After you build your design, look for warnings in the messages and logs windows about the register file.
-
 \subsection{RAMs}
 \label{ram_info}
 In this project, we will be using inferred block RAMs to implement memories for the processor.
@@ -269,10 +267,10 @@ The Verilog \verb|$readmemb(filename, path to 2D reg, start addr, end addr)| and
 These system tasks are placed inside an \verb|initial| block and point to a particular 2D reg instance to initialize.
 If a 2D reg isn't initialized it is filled with Xs.
 
-For synthesis, all the memories are initialized with the contents of the BIOS program\\
+For synthesis, the BIOS memory is initialized with the contents of the BIOS program, and the other memories are left uninitialized (zeroed out)\\
 (see \verb|src/memories/{imem, dmem, bios_mem}.v|).
 
-For simulation, the testbench initializes the memories with a program specified by the testbench (see \verb|sim/assembly_testbench.v|).
+For simulation, the provided testbenches initialize the BIOS memory with a program specified by the testbench (see \verb|sim/assembly_testbench.v|).
 
 \subsubsection{Endianness + Addressing}
 The instruction and data RAMs have 16384 32-bit rows, as such, they accept 14 bit addresses.
@@ -281,7 +279,7 @@ The RAMs are \textbf{word-addressed}; this means that every unique 14 bit addres
 However, the memory addressing scheme of RISC-V is \textbf{byte-addressed}.
 This means that every unique 32 bit address the processor computes (in the ALU) points to one 8-bit byte of memory.
 
-For us, the bottom 16 bits of the addresses computed by the CPU are relevant for RAM access.
+We consider the bottom 16 bits of the computed address (from the ALU) when accessing the RAMs.
 The top 14 bits are the word address (for indexing into one row of the block RAM), and the bottom two are the byte offset (for indexing to a particular byte in a 32 bit row).
 
 \label{endianness}
@@ -301,7 +299,7 @@ Since the RAMs have 32-bit rows, you can only read data out of the RAM 32-bits a
 This is an issue when executing an \verb|lh| or \verb|lb| instruction, as there is no way to indicate which 8 or 16 of the 32 bits you want to read out.
 
 Therefore, you will have to shift and mask the output of the RAM to select the appropriate portion of the 32-bits you read out.
-For example, if you want to execute a \verb|lbu| on an address ending in \verb|2'b10|, you will only want bits \verb|[23:16]| of the 32 bits that you read out of the RAM (thus storing \verb|{24'b0, output[23:16]}| to a register).
+For example, if you want to execute a \verb|lbu| on a byte address ending in \verb|2'b10|, you will only want bits \verb|[23:16]| of the 32 bits that you read out of the RAM (thus storing \verb|{24'b0, output[23:16]}| to a register).
 
 \subsubsection{Writing to RAMs}
 To take care of \verb|sb| and \verb|sh|, note that the \verb|we| input to the instruction and data memories is 4 bits wide.
@@ -312,45 +310,45 @@ Here's an example of storing a single byte:
 \begin{itemize}
   \item Write the byte \verb|0xa4| to address \verb|0x10000002| (byte offset = 2)
   \item Set \verb|we = {4'b0100}|
-  \item Set \verb|dina = {32'hxx_a4_xx_xx}| (\verb|x| means don't care)
+  \item Set \verb|din = {32'hxx_a4_xx_xx}| (\verb|x| means don't care)
 \end{itemize}
 
 \subsection{Memory Architecture}
 The standard RISC pipeline is usually depicted with separate instruction and data memories.
-Although this is an intuitive representation, it does not let us modify instruction memory to run new programs.
+Although this is an intuitive representation, it does not let us modify the instruction memory to run new programs.
 Your CPU, by the end of this checkpoint, will be able to receive compiled RISC-V binaries though the UART, store them into instruction memory, then jump to the downloaded program.
-To facilitate this, we will adopt a modified memory architecture shown in Figure \ref{fig:mem_arch}:
+To facilitate this, we will adopt a modified memory architecture shown in Figure \ref{fig:mem_arch}.
 
 \begin{figure}[hbt]
   \begin{center}
     \includegraphics[width=0.8\textwidth]{memory_arch.pdf}
-    \caption{Memory Architecture. There is only 1 IMEM and DMEM instance but their ports are shown separately in this figure for clarity. The left half shows the instruction fetch logic and the right half shows the memory load/store logic.}
+    \caption{The Riscv151 memory architecture. There is only 1 IMEM and DMEM instance in Riscv151 but their ports are shown separately in this figure for clarity. The left half of the figure shows the instruction fetch logic and the right half shows the memory load/store logic.}
     \label{fig:mem_arch}
   \end{center}
 \end{figure}
 
 \subsubsection{Summary of Memory Access Patterns}
-Your memory architecture will consist of three RAMs.
-The RAMs are memory resources contained within the FPGA chip, and no external (off-chip, DRAM) memory will be used for this project.
-There are RAMs for the instruction, data, and the BIOS memory.
+The memory architecture will consist of three RAMs (instruction, data, and BIOS).
+The RAMs are memory resources (block RAMs) contained within the FPGA chip, and no external (off-chip, DRAM) memory will be used for this project.
 
-Your processor will begin execution from the BIOS memory, which will be initialized with the BIOS program (in \verb|software/bios151v3|).
-The BIOS program will be able to read from the BIOS memory (to fetch static data and instructions), and to read and write to and from instruction and data memory.
-This allows the BIOS program to receive user programs over the UART from your computer and load them into instruction memory.
-You can then instruct the BIOS program to jump to an instruction memory address, which begin execution of the program that you loaded.
+The processor will begin execution from the BIOS memory, which will be initialized with the BIOS program (in \verb|software/bios151v3|).
+The BIOS program should be able to read from the BIOS memory (to fetch static data and instructions), and read and write the instruction and data memories.
+This allows the BIOS program to receive user programs over the UART from the host PC and load them into instruction memory.
+
+You can then instruct the BIOS program to jump to an instruction memory address, which begins execution of the program that you loaded.
 At any time, you can press the reset button on the board to return your processor to the BIOS program.
 
 \subsubsection{Unaligned Memory Accesses}
 In the official RISC-V specification, unaligned loads and stores are supported.
 However, in your project, you can ignore instructions that request an unaligned access.
-The compiler will never generate unaligned accesses.
+Assume that the compiler will never generate unaligned accesses.
 
 \subsubsection{Address Space Partitioning}
 Your CPU will need to be able to access multiple sources for data as well as control the destination of store instructions.
 In order to do this, we will partition the 32-bit address space into four regions: data memory read and writes, instruction memory writes, BIOS memory reads, and memory-mapped I/O.
 This will be encoded in the top nibble (4 bits) of the memory address generated in load and store operations, as shown in Table \ref{mem_space1}.
 In other words, the target memory/device of a load or store instruction is dependent on the address.
-The reset signal should reset the PC to the value defined by the parameter \verb|RESET_PC| which is by default the start of BIOS memory (\verb|0x40000000|).
+The reset signal should reset the PC to the value defined by the parameter \verb|RESET_PC| which is by default the base of BIOS memory (\verb|0x40000000|).
 
 \begin{table}[hbt]
   \begin{center}
@@ -360,9 +358,9 @@ The reset signal should reset the PC to the value defined by the parameter \verb
       \bottomrule
       \textbf{Address[31:28]} & \textbf{Address Type} & \textbf{Device} & \textbf{Access} & \textbf{Notes} \\
       \midrule
-      4'b00x1 & Data & Data Memory & Read/Write &\\ %Why do we allow the 2nd bit to be x??  This can cause a conflixt with the instruction memory write.  I suppose PC[30] sets the mode?
+      4'b00x1 & Data & Data Memory & Read/Write &\\
       4'b0001 & PC  &  Instruction Memory & Read-only &\\
-      4'b001x & Data & Instruction Memory & Write-Only & Only if PC[30] == 1'b1\\ %change to 4'b0011 ?? this is requested below
+      4'b001x & Data & Instruction Memory & Write-Only & Only if PC[30] == 1'b1\\
       4'b0100 & PC  & BIOS Memory & Read-only &\\
       4'b0100 & Data & BIOS Memory & Read-only &\\
       4'b1000 & Data & I/O & Read/Write &\\
@@ -371,13 +369,13 @@ The reset signal should reset the PC to the value defined by the parameter \verb
   \end{center}
 \end{table}
 
-Each partition specified in Table \ref{mem_space1} should be enabled only based on its associated bit in the address encoding.
+Each partition specified in Table \ref{mem_space1} should be enabled based on its associated bit in the address encoding.
 This allows operations to be applied to multiple devices simultaneously, which will be used to maintain memory consistency between the data and instruction memory.
 
 For example, a store to an address beginning with \verb|0x3| will write to both the instruction memory and data memory, while storing to addresses beginning with \verb|0x2| or \verb|0x1| will write to only the instruction or data memory, respectively.
 For details about the BIOS and how to run programs on your CPU, see Section~\ref{bios_info}.
 
-Please note that a given address maybe refers to a different memory depending on which address type it is.
+Please note that a given address could refer to a different memory depending on which address type it is.
 For example the address \verb|0x10000000| refers to the data memory when it is a data address while a program counter value of \verb|0x10000000| refers to the instruction memory.
 
 The note in the table above (referencing PC[30]), specifies that you can only write to instruction memory if you are currently executing in BIOS memory.
@@ -434,20 +432,23 @@ A reasonable order in which to complete your testing is as follows:
 \begin{enumerate}
   \item Test that your modules work in isolation via Verilog testbenches
   \item Test the entire CPU one instruction at a time with hand-written assembly --- see \verb|assembly_testbench.v|
-  \item Run the \verb|riscv-tests| ISA test suite
   \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
+  \item Run the \verb|riscv-tests| ISA test suite
 \end{enumerate}
 
 \subsubsection{Integration Testing}
-Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. The easiest way to do this is to write an assembly program that tests all of the instructions in your ISA. A skeleton is provided for you in \verb|software/assembly_tests|. See Section \ref{assembly_tests} for details.
+Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. The easiest way to do this is to write an assembly program that tests all of the instructions in your ISA.
+A skeleton is provided for you in \verb|software/assembly_tests|.
+See Section \ref{assembly_tests} for details.
 
 Once you have verified that all the instructions in the ISA are working correctly, you may also want to verify that the memory mapped I/O and instruction/data memory reading/writing work with a similar assembly program.
 
 \subsection{Software Toolchain - Writing RISC-V Programs}
 \label{toolchain}
-A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab. The most relevant pieces of the toolchain are given below:
+A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab.
+The most relevant programs in the toolchain are:
 \begin{itemize}
-    \item \verb|riscv64-unknown-elf-gcc|: gcc for RISC-V, compiles C code to RISC-V binaries.
+    \item \verb|riscv64-unknown-elf-gcc|: GCC for RISC-V, compiles C code to RISC-V binaries.
     \item \verb|riscv64-unknown-elf-as|: RISC-V assembler, compiles assembly code to RISC-V binaries.
     \item \verb|riscv64-unknown-elf-objdump|: Dumps RISC-V binaries as readable assembly code.
 \end{itemize}
@@ -462,7 +463,7 @@ There are several files:
       Typically your stack pointer is set to the top of the data memory address space, so that the stack has enough room to grow downwards.
 
     \item \verb|c_example.ld|: This linker script sets the base address of the program.
-      For checkpoint 2, this address should be in the format \verb|0x1000xxxx|
+      For Checkpoint 2, this address should be in the format \verb|0x1000xxxx|
       The .text segment offset is typically set to the base of the instruction memory address space.
 
     \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
@@ -490,20 +491,24 @@ Done: j Done
 The \verb|assembly_testbench| toggles the clock one cycle at time and waits for register \verb|x20| to be written with a particular value (in the above example: 1).
 Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and checks it is 300, which indicates your processor correctly executed the add instruction.
 
-If the testbench timed out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
+If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
+
+\subsection{RISC-V ISA Tests}
+\textit{Fall 19 Note:} We will be providing a test harness for running the \verb|riscv-tests| ISA test suite soon.
+You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
 
 \subsection{BIOS and Programming your CPU}
 \label{bios_info}
 
 We have provided a BIOS program in \verb|software/bios151v3| that allows you to interact with your CPU and download other programs over UART.
-The BIOS is basically just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs the action.
+The BIOS is just an infinite loop that reads from the UART, checks if the input string matches a known control sequence, and then performs an associated action.
 For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
 
 To run the BIOS:
 \begin{enumerate}
   \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld|
   \item Compile the program with \verb|make| in the \verb|software/bios151v3| directory
-  \item Verify the \verb|{imem, dmem, bios_mem.v}| modules are initialized with the BIOS hex file
+  \item Verify the \verb|bios_mem.v| module is initialized with the BIOS hex file
   \item Build a bitstream and program the FPGA
   \item Use screen to access the serial port:
     \begin{minted}[tabsize=2]{bash}
@@ -525,6 +530,8 @@ If all goes well, you should see a \verb|151 >| prompt after pressing return. Th
 As an example, running \verb|sw cafef00d 10000000| should write to the data memory and running \verb|lw 10000000| should print the output \verb|10000000: cafef00d|.
 Please also pay attention that writes to the instruction memory (\verb|sw ffffffff 20000000|) do not write to the data memory, i.e. \verb|lw 10000000| still should yield \verb|cafef00d|.
 
+\textit{Fall 19 Note:} We are replacing \verb|coe_to_serial| with another script we will release soon.
+
 In addition to the command interface, the BIOS allows you to load programs to the CPU. \textit{With screen closed}, run:
 \begin{minted}[tabsize=2]{bash}
     coe_to_serial <coe_file> <address>
@@ -532,15 +539,17 @@ In addition to the command interface, the BIOS allows you to load programs to th
 
 This stores the \verb|.coe| file at the specified hex address.
 In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3} (i.e. \verb|coe_to_serial echo.coe 30000000|, assuming the \verb|.ld| file sets the base address to 0x10000000).
-You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
 
-For example, before making the \verb|mmult| program you should have set the set the base address to \verb|0x10006000| (see \ref{mmult}). Therefore, when loading the \verb|mmult| program to the FPGA you should place it into the memory that it starts aligned with the base address: \verb|coe_to_serial mmult.coe 30006000|. Then, you can start in in your screen session by using \verb|jal 10006000|.
+You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
+For example, before making the \verb|mmult| program you should have set the set the base address to \verb|0x10006000| (see \ref{mmult}).
+Therefore, when loading the \verb|mmult| program to the FPGA you should place it into the memory that it starts aligned with the base address: \verb|coe_to_serial mmult.coe 30006000|.
+Then, you can start in in your screen session by using \verb|jal 10006000|.
 
 \subsection{Target Clock Frequency}
-By default, the minimum clock period is set at 50MHz.
+By default, the CPU clock frequency is set at 50MHz.
 It should be easy to meet timing at 50 MHz.
 Look at the reports in \verb|hardware/build/synth/post_synth_timing_summary.rpt| and \verb|impl/post_route_timing_summary.rpt| to see if timing is met.
-If you failed, the timing reports specify the critical path so you can attempt to optimize.
+If you failed, the timing reports specify the critical path you should optimize.
 
 For this checkpoint, we will allow you to demonstrate the CPU working at 50 MHz, but for the final checkoff at the end of the semester, you will need to optimize for a higher clock speed ($\geq$ 100MHz) for full credit.
 Details on how to build your FPGA design with a different clock frequency will come later.
@@ -549,7 +558,9 @@ Details on how to build your FPGA design with a different clock frequency will c
 \label{mmult}
 To check the correctness and performance of your processor we have provided a benchmark in \verb|software/mmult/| which performs matrix multiplication.
 You should be able to load it into your processor in the same way as loading the echo program.
-This program computes $S=AB$, where $A$ and $B$ are 64$\times$64 matrices. The program will print a checksum and the counters discussed in Section ~\ref{mmio}.
+
+This program computes $S=AB$, where $A$ and $B$ are 64$\times$64 matrices.
+The program will print a checksum and the counters discussed in Section ~\ref{mmio}.
 The correct checksum is \verb|0001f800|.
 If you do not get this, there is likely a problem in your CPU with one of the instructions that is used by the BIOS but not mmult.
 
@@ -581,20 +592,20 @@ Once you're tired, go home and \textit{sleep}. When you come back you will know 
 It might seem overwhelming to implement all the functionality that your processor must support. The best way to implement your processor is in small increments, checking the correctness of your processor at each step along the way. Here is a guide that should help you plan out Checkpoint 1 and 2:
 
 \begin{enumerate}
-  \item \textit{Design.} You should start with a comprehensive and detailed design/schematic. We suggest that you think carefully about all the functionality and instructions your processor needs to support and enumerate all the control signals that you will need. Be especially careful when designing the memory fetch stage of your pipeline as all the memories we use (BIOS, inst, data, IO) are synchronous.
-  \item \textit{First steps.} You should get started by implementing some modules that are straightforward to write and test. We suggest you get started by writing \verb|reg_file.v|, for which there has been a template provided in the project skeleton. Once you finish writing the regfile, test it comprehensively by writing a Verilog testbench. Look at the Register File section for details on what the test should verify.
-  \item \textit{Control Unit + other small modules.} Next try implementing your control unit, the ALU, and any other small independent modules that you identified in your design. Make sure you unit test these aggressively, so that you verify their correctness and get used to writing Verilog testbenches.
-  \item \textit{Memory.} Create your memory controller and other auxiliary structures. Only add the BIOS memory in the instruction fetch stage and only add the data memory block RAM in the memory stage of your pipeline. This will keep things simple in order to test the base functionality of your processor.
-  \item \textit{Connect stages and pipeline.} Now you should have all of the modules ready to connect them together and pipeline them by inserting registers between the stages. At this point, you should be able to run integration tests using assembly tests for most R and I type instructions.
-  \item \textit{Implement handling of control hazards.} Now insert bubbles into your pipeline to resolve control hazards associated with JAL, JALR, and branch instructions. Don't worry about data hazard handling for now. Test that your control instructions work properly with assembly tests. You can insert explicit NOP instructions in your tests to get around data dependencies.
-  \item \textit{Implement data forwarding for data hazards.} Add forwarding muxes to the proper place in your datapath and forward the outputs of the ALU and memory stage. Implement a hazard unit that can detect data dependencies and set the control signals for the forwarding muxes accordingly. Remember that you might have to forward to ALU input A, ALU input B, and data to write to memory. Test forwarding aggressively; most of your bugs will come from incomplete or faulty forwarding logic. Make sure you test forwarding from memory and from the ALU, and with control instructions.
+  \item \textit{Design.} You should start with a comprehensive and detailed design/schematic. Enumerate all the control signals that you will need. Be careful when designing the memory fetch stage since all the memories we use (BIOS, instruction, data, IO) are synchronous.
+  \item \textit{First steps.} Implementing some modules that are easy to write and test. Write the \verb|reg_file.v| module. Create a Verilog testbench and test the cases in Section \ref{reg_file}.
+  \item \textit{Control Unit + other small modules.} Implement the control unit, ALU, and any other small independent modules. Unit test them.
+  \item \textit{Memory.} In the beginning, only use the BIOS memory in the instruction fetch stage and only use the data memory in the memory stage. This is enough to run assembly tests.
+  \item \textit{Connect stages and pipeline.} Connect your modules together and pipeline them. At this point, you should be able to run integration tests using assembly tests for most R and I type instructions.
+  \item \textit{Implement handling of control hazards.} Insert bubbles into your pipeline to resolve control hazards associated with JAL, JALR, and branch instructions. Don't worry about data hazard handling for now. Test that control instructions work properly with assembly tests.
+  \item \textit{Implement data forwarding for data hazards.} Add forwarding muxes and forward the outputs of the ALU and memory stage. Remember that you might have to forward to ALU input A, ALU input B, and data to write to memory. Test forwarding aggressively; most of your bugs will come from incomplete or faulty forwarding logic. Test forwarding from memory and from the ALU, and with control instructions.
   \item \textit{Add BIOS memory reads.} Add the BIOS memory block RAM to the memory stage to be able to load data from the BIOS memory. Write assembly tests that contain some static data stored in the BIOS memory and verify that you can read that data.
-  \item \textit{Add Inst memory writes and reads.} Add the instruction memory block RAM to the memory stage to be able to write data to it when executing inside the BIOS memory. Also add the instruction memory block RAM to the instruction fetch stage to be able to read instructions from the inst memory. It is crucial to write tests to stress this portion of the processor; we suggest writing tests that first write instructions to the instruction memory, and then jump (using jalr) to instruction memory to see the right instructions are executed.
-  \item \textit{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a SW instruction, and can be read from using a LW instruction.
-  \item \textit{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. This part can be tricky, ask a TA for a full explanation of how a program would communicate with the UART. We have provided you with the \verb|echo_testbench| which performs a test of the UART. You should extend this testbench with more comprehensive tests, as many bugs can be traced to a faulty UART integration.
-  \item \textit{Run the BIOS.} If everything so far has gone well, you can try making the CPU with instantiating the BIOS memory with the BIOS program. Impact the CPU on the board and verify that the BIOS performs as expected. As a precursor to this step, you might try to make the CPU with instantiating the BIOS memory with the echo program, since it is a smaller and easier to analyze program.
-  \item \textit{Run matrix multiply.} As a final step to check your implementation, you should be able to load the \verb|mmult| program with the \verb|coe_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
-  \item \textit{Check CPI.} Now that your processor is complete as far as functionality goes, compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
+  \item \textit{Add Inst memory writes and reads.} Add the instruction memory block RAM to the memory stage to be able to write data to it when executing inside the BIOS memory. Also add the instruction memory block RAM to the instruction fetch stage to be able to read instructions from the inst memory. Write tests that first write instructions to the instruction memory, and then jump (using jalr) to instruction memory to see that the right instructions are executed.
+  \item \textit{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a \verb|sw| instruction, and can be read from using a \verb|lw| instruction.
+  \item \textit{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. We have provided you with the \verb|echo_testbench| which performs a test of the UART.
+  \item \textit{Run the BIOS.} If everything so far has gone well, program the FPGA. Verify that the BIOS performs as expected. As a precursor to this step, you might try to build a bitstream with the BIOS memory initialized with the echo program.
+  \item \textit{Run matrix multiply.} Load the \verb|mmult| program with the \verb|coe_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
+  \item \textit{Check CPI.} Compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
 \end{enumerate}
 
 \subsection{Checkoff}
@@ -604,14 +615,15 @@ As such, completing the block diagram in time for the design review is crucial t
 
 \subsubsection{\blockDiagramTaskName: Block Diagram}
 The first checkpoint requires a detailed block diagram of your datapath.
-The diagram should have a greater level of detail than a high level RISC datapath diagram. You may complete this electronically or by hand.
+The diagram should have a greater level of detail than a high level RISC datapath diagram.
+You may complete this electronically or by hand.
 
 If working by hand, we recommend working in pencil and combining several sheets of paper for a larger workspace.
 If doing it electronically, you can use Inkscape, Google Drawings, draw.io or any program you want.
 
 You should be able to describe in detail any smaller sub-blocks in your diagram.
 Though the textbook diagrams are a decent starting place, remember that they often use asynchronous-read RAMs for the instruction and data memories, and we will be using synchronous-read block RAMs.
-Additionally, at this point we recommend that you have completely functional UART, ALU, instruction decoder, and register file modules (see \ref{reg_file}), though we will not be checking this.
+Additionally, at this point we recommend that you have completely functional UART, ALU, instruction decoder, and register file modules (see Section \ref{reg_file}).
 
 \textbf{\blockDiagramTaskName \space is due in lab no later than \blockDiagramDueDate}.
 You are required to go over your design with a GSI during lab.
@@ -623,7 +635,7 @@ Come to lab every week even if there is no checkoff deadline.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
 This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
-Checkoff will consist of a demonstration of the BIOS functionality, storing a program (echo and mmult) over the UART, and successfully jumping to and executing the program.
+Checkoff will consist of a demonstration of the BIOS functionality, loading a program (\verb|echo| and \verb|mmult|) over the UART, and successfully jumping to and executing the program.
 
 \textbf{\baseCPUTaskName \space materials should be committed to your project repository by \baseCPUDueDate.}
 
@@ -650,7 +662,7 @@ You will design a generic PWM controller to drive the audio output that can be c
 Finally, you will implement a simple polyphonic subtractive synthesizer with amplitude (ADSR) envelopes.
 
 \subsection{I/O Integration}
-In lab, you built a synchroniser, debouncer and an edge detector that were used to take in various user inputs.
+In lab, you built a synchronizer, debouncer and an edge detector that were used to take in various user inputs.
 Now, we want our processor to have access to these inputs (and the switches) and also to be able to drive outputs such as the LEDs.
 We will extend our memory map to give programs access to these I/Os.
 
@@ -710,8 +722,12 @@ This program has several commands to help you debug and verify functionality:
 
 \subsection{PWM Controller}
 \subsubsection{Testing the PWM Controller}
-\textbf{This section will be updated}
-We have provided a program to test your tone generator and its memory map. It can be found in \verb|software/tone_gen_test/|. Compile and run the program just as you did for the \verb|user_io_test|. Make sure the first slide switch is on. \verb|jal| to the program from the BIOS, and you can play with these commands:
+\textbf{Fall 19 Note: This section will be updated}
+
+We have provided a program to test your tone generator and its memory map.
+It can be found in \verb|software/tone_gen_test/|.
+Compile and run the program just as you did for the \verb|user_io_test|.
+\verb|jal| to the program from the BIOS, and you can play with these commands:
 
 \begin{itemize}
   \item \verb|on| - Flips the output enable register high
@@ -810,10 +826,10 @@ The program will print out information as you transition the state machine, edit
 \pagebreak
 
 \section{Final Checkpoint - Optimization}
-This optimization checkpoint is lumped with the final checkpoint and the checkoff will occur at the same time.
+This optimization checkpoint is lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 
-The general optimization goal for this project is to achieve maximal performance on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
+The optimization goal for this project is to achieve maximal performance on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
 
 \begin{equation*}
 \frac{\text{Time}}{\text{Program}} = \frac{\text{Instructions}}{\text{Program}} \times \frac{\text{Cycles}}{\text{Instruction}} \times \frac{\text{Time}}{\text{Cycle}}
@@ -871,8 +887,6 @@ You will be graded based on the best \verb|mmult| performance you were able to a
 \pagebreak
 
 \section{Optimizations, Extra Credit, and Grading}
-
-
 \textbf{All groups must complete the final checkoff by \finalCheckoffDueDate.} Use the week prior to your final checkoff for code cleanup, optimizations, late checkpoints, and optional extra credit projects.
 
 \subsection{Grading on Optimization}
@@ -881,22 +895,20 @@ To receive full credit, you must demonstrate a working CPU at an optimized clock
 
 Credit for your area optimizations will be calculated using a cost function. At a high level, the cost function will look like:
 
-\[\mathrm{Cost}=\mathrm{C_{LUT}} \times \mathrm{\# of LUTs} + \mathrm{C_{RAMB}} \times \mathrm{\#of RAMBs} + \mathrm{C_{REG}} \times \mathrm{\#of Slice Registers} \]
+\[\mathrm{Cost}=\mathrm{C_{LUT}} \times \text{\# of LUTs} + \mathrm{C_{RAMB}} \times \text{\#of RAMBs} + \mathrm{C_{REG}} \times \text{\#of Slice Registers} \]
 
 where $\mathrm{C_{LUT}}$, $\mathrm{C_{RAMB}}$, and $\mathrm{C_{REG}}$ are constant value weights that will be decided upon based on how much each resource that you use should cost. As part of your final grade we will evaluate the cost of your design based on this metric. Keep in mind that cost is only one very small component of your project grade. Correct functionality is far more important.
 
 \subsection{Checkpoints}
 \label{checkoff}
 
-We have divided the project up into checkpoints so that you (and the staff) can pace your progress. The due dates are indicated at the end of each checkpoint section, as well as in the \textbf{Project Timeline} (Section \ref{project_timeline}) at the end of this document. During the week each checkpoint is due, you will be required to get your implementation checked off by the GSI in the lab section you are enrolled in.
+We have divided the project up into checkpoints so that you (and the staff) can pace your progress. The due dates are indicated at the end of each checkpoint section, as well as in the \textbf{Project Timeline} (Section \ref{project_timeline}) at the end of this document.
 
 \subsection{Style: Organization, Design}
 \label{style}
-
 Your code should be modular, well documented, and consistently styled. Projects with incomprehensible code will upset the graders.
 
 \subsection{Final Project Report}
-
 Upon completing the project, you will be required to submit a report detailing the progress of your EECS151/251A project. The report should document your final circuit at a high level, and describe the design process that led you to your implementation.  We expect you to document and justify any tradeoffs you have made throughout the semester, as well as any pitfalls and lessons learned (not make excuses for why something didn't work).  Additionally, you will document any optimizations made to your system, the system's performance in terms of area (resource use), clock period, and CPI, and other information that sets your project apart from other submissions.
 
 The staff emphasizes the importance of the project report because it is the product you are able to take with you after completing the course.  All of your hard work should reflect in the project report. Employers may (and have) ask to examine your EECS151/251A project report during interviews. Put effort into this document and be proud of the results. You may consider the report to be your medal for surviving EECS151/251A.
@@ -924,13 +936,10 @@ Teams that have completed the base set of requirements are eligible to receive e
 
 The following are suggested projects that may or may not be feasible in one week.
 \begin{itemize}
-  \item Integrating your Tone Generator and I2S Controller from the Lab Assignments (see section \ref{audio_extra_credit} for details)
   \item Branch Predictor: Implement a two bit (or more complicated) branch predictor with a branch history table (BHT) to replace the naive 'always taken' predictor used in the project
   \item 5-Stage Pipeline: Add more pipeline stages and push the clock frequency past 100MHz
-  \item Audio Recording: Capturing mic input from the Pynq's microphone
+  \item Audio Recording: Capture mic input from the Pynq's microphone and wire it to the CPU via MMIO
   \item RISC-V M Extension: Extend the processor with a hardware multiplier and divider
-  \item 3 (or more) bit color: Increase the size of the framebuffer to have control of the RGB content of each pixel
-  \item Dynamic Resolution: Allow the processor to control the output resolution of the DVI controller at runtime
 \end{itemize}
 
 When the time is right, if you are interested in implementing any of these, see the staff for more details.
