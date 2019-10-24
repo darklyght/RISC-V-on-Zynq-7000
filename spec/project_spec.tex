@@ -1012,6 +1012,17 @@ sudo make install
 Download SiFive's GNU Embedded Toolchain \href{https://www.sifive.com/boards}{from here}.
 See the 'Prebuilt RISC-V GCC Toolchain and Emulator' section.
 
+After downloading and extracting the tarball, add the \verb|bin| folder to your \verb|PATH|.
+For Windows, make sure you can execute \verb|riscv64-unknown-elf-gcc -v| in a Cygwin terminal.
+Do the same for OSX, using the regular terminal.
+
+For Windows, re-run the Cygwin installer and install the packages\\\verb|git, python3, python2, autoconf, automake, libtool|.
+See \href{https://stackoverflow.com/questions/47168311/cygwin-and-failed-to-run-aclocal-no-such-file-or-directory}{this StackOverflow question} if you need help selecting the exact packages to install.
+
+Clone the \verb|elf2hex| repo \verb|git clone git@github.com:sifive/elf2hex|.
+Follow the instructions in the \href{https://github.com/sifive/elf2hex}{elf2hex repo README} to build it from git.
+You should be able to run \verb|riscv64-unknown-elf-elf2hex| in a terminal.
+
 \section{BIOS}
 \label{sec:biosinfo}
 This section was written by Vincent Lee, Ian Juch, and Albert Magyar.
