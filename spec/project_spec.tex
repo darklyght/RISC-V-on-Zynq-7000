@@ -473,6 +473,11 @@ There are several files:
 \subsection{Assembly Tests}
 \label{assembly_tests}
 Hand written assembly tests are in \verb|software/assembly_tests/start.s| and the corresponding testbench is in \verb|hardware/sim/assembly_testbench.v|.
+To run the test, run:\\
+\verb|make sim/assembly_testbench.fst| (iverilog) or \verb|make sim/assembly_testbench.vpd| (VCS).
+
+If you want to forcibly re-run the test even though you didn't change the Verilog, run:\\
+\verb|make -B sim/assembly_testbench.fst|
 
 \verb|start.s| contains assembly that's compiled and loaded into the BIOS RAM by the testbench.
 \begin{minted}[breaklines]{asm}
