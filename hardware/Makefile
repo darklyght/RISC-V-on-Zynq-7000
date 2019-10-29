@@ -9,11 +9,11 @@ RTL                     += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src 
 CONSTRAINTS             += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/src -type f -name "*.xdc"))
 TOP                     ?= z1top
 VCS                     := vcs -full64
-VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1ns/10ps -debug -sverilog +define+ABS_TOP=$(ABS_TOP)
+VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1ns/10ps -debug -sverilog +define+ABS_TOP=$(ABS_TOP) +incdir+$(ABS_TOP)/src/riscv_core
 SIM_RTL                 += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
 SIM_MODELS              := $(VIVADO_BASE)/data/verilog/src/unisims/BUFG.v $(VIVADO_BASE)/data/verilog/src/unisims/PLLE2_ADV.v $(VIVADO_BASE)/data/verilog/src/glbl.v
 IVERILOG                := iverilog
-IVERILOG_OPTS           := -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP)
+IVERILOG_OPTS           := -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core
 VVP                     := vvp
 
 sim/%.tb: sim/%.v $(RTL)
@@ -68,7 +68,7 @@ vivado: build
 	cd build && nohup $(VIVADO) </dev/null >/dev/null 2>&1 &
 
 lint:
-	verilator -DABS_TOP=$(ABS_TOP) --lint-only --top-module $(TOP) $(RTL) $(ABS_TOP)/stubs/PLLE2_ADV.v $(VIVADO_BASE)/data/verilog/src/unisims/BUFG.v
+	verilator -DABS_TOP=$(ABS_TOP) --lint-only --top-module $(TOP) $(RTL) -I$(ABS_TOP)/src/riscv_core $(ABS_TOP)/stubs/PLLE2_ADV.v $(VIVADO_BASE)/data/verilog/src/unisims/BUFG.v
 
 sim_build/compile_simlib/synopsys_sim.setup:
 	mkdir -p sim_build/compile_simlib
