@@ -6,6 +6,16 @@ module reg_file (
     output [31:0] rd1, rd2
 );
     reg [31:0] registers [0:31];
-    assign rd1 = 32'd0;
-    assign rd2 = 32'd0;
+    
+    always @ (posedge clk) begin
+        if (we == 1'b1) begin
+            if (wa != 5'b0) begin
+                registers[wa] <= wd;
+            end
+        end
+    end
+    
+    assign rd1 = (ra1 == 5'b0) ? 32'b0 : registers[ra1];
+    assign rd2 = (ra2 == 5'b0) ? 32'b0 : registers[ra2];
+    
 endmodule

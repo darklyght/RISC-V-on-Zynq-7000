@@ -10,3 +10,6 @@
 *.vpd
 *.dump
 *.hex
+.library_mapping.xml
+.project
+.settings/com.sigasi.hdt.verilog.version.prefs
