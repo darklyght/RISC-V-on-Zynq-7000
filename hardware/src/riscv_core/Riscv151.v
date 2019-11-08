@@ -134,6 +134,8 @@ module Riscv151 #(
     wire [31:0] alu_alu_out;
     
     wire [31:0] dmem_wsel_addr;
+    wire dmem_wsel_we;
+    wire [4:0] dmem_wsel_funct5;
     wire [2:0] dmem_wsel_funct3;
     wire dmem_wsel_pc30;
     wire [3:0] dmem_wsel_dmem_wea;
@@ -165,6 +167,31 @@ module Riscv151 #(
     wire [31:0] wb_sel_dmem_out;
     wire [31:0] wb_sel_wb_out;
     
+    wire [4:0] decode_fwd_ctrl_rs1;
+    wire [4:0] decode_fwd_ctrl_rs2;
+    wire [4:0] decode_fwd_ctrl_rd;
+    wire decode_fwd_ctrl_rs1_sel;
+    wire decode_fwd_ctrl_rs2_sel;
+    
+    wire [4:0] execute_fwd_ctrl_rs1;
+    wire [4:0] execute_fwd_ctrl_rs2;
+    wire [4:0] execute_fwd_ctrl_rd;
+    wire execute_fwd_ctrl_rs1_sel;
+    wire execute_fwd_ctrl_rs2_sel;
+    
+    wire [31:0] control_decode_inst;
+    wire [31:0] control_execute_inst;
+    wire [31:0] control_writeback_inst;
+    wire control_pc_sel;
+    wire control_alu1_sel;
+    wire control_alu2_sel;
+    wire control_brun;
+    wire control_breq;
+    wire control_brlt;
+    wire control_dmem_we;
+    wire [1:0] control_wb_sel;
+    wire control_we;
+    
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
         .alu(pc_sel_alu), // From alu
@@ -172,6 +199,7 @@ module Riscv151 #(
         .pc_next(pc_sel_pc_next) // To decode, bios_mem, imem
     );
     
+    assign pc_sel_pc_sel = control_pc_sel;
     assign pc_sel_alu = alu_alu_out;
     assign pc_sel_pc = decode_pc;
     assign bios_addra = pc_sel_pc_next;
@@ -188,7 +216,7 @@ module Riscv151 #(
     
     imem_sel imem_sel (
         .pc30(imem_sel_pc30), // From decode
-        .inst(imem_sel_inst), // To reg_file, imm_gen, execute
+        .inst(imem_sel_inst), // To reg_file, imm_gen, execute, decode_fwd_ctrl
         .bios_douta(imem_sel_bios_douta), // From bios_mem
         .imem_doutb(imem_sel_imem_doutb) // From imem
     );
@@ -207,8 +235,8 @@ module Riscv151 #(
     assign imem_gen_inst = imem_sel_inst;
     
     forward_sel decode_forward (
-        .rs1_sel(decode_forward_rs1_sel), // From control
-        .rs2_sel(decode_forward_rs2_sel), // From control
+        .rs1_sel(decode_forward_rs1_sel), // From decode_fwd_ctrl
+        .rs2_sel(decode_forward_rs2_sel), // From decode_fwd_ctrl
         .wb_data(decode_forward_wb_data), // From wb_sel
         .reg_rs1(decode_forward_reg_rs1), // From reg_file
         .reg_rs2(decode_forward_reg_rs2), // From reg_file
@@ -216,6 +244,8 @@ module Riscv151 #(
         .rs2_data(decode_forward_rs2_data) // To execute
     );
     
+    assign decode_forward_rs1_sel = decode_fwd_ctrl_rs1_sel;
+    assign decode_forward_rs2_sel = decode_fwd_ctrl_rs2_sel;
     assign decode_forward_wb_data = wb_sel_wb_out;
     assign decode_forward_reg_rs1 = rd1;
     assign decode_forward_reg_rs2 = rd2;
@@ -229,7 +259,7 @@ module Riscv151 #(
         .reg_rs2_next(execute_reg_rs2_next), // From decode_forward
         .imm_next(execute_imm_next), // From imm_gen
         .pc(execute_pc), // To pc4_gen, alu_sel, dmem_wsel
-        .inst(execute_inst), // To writeback, alu, dmem_wsel
+        .inst(execute_inst), // To writeback, alu, dmem_wsel, execute_fwd_ctrl
         .reg_rs1(execute_reg_rs1), // To execute_forward
         .reg_rs2(execute_reg_rs2), // To execute_forward
         .imm(execute_imm)
@@ -242,8 +272,8 @@ module Riscv151 #(
     assign execute_imm_next = imm_gen_imm;
     
     forward_sel execute_forward (
-        .rs1_sel(execute_forward_rs1_sel), // From control
-        .rs2_sel(execute_forward_rs2_sel), // From control
+        .rs1_sel(execute_forward_rs1_sel), // From execute_fwd_ctrl
+        .rs2_sel(execute_forward_rs2_sel), // From execute_fwd_ctrl
         .wb_data(execute_forward_wb_data), // From wb_sel
         .reg_rs1(execute_forward_reg_rs1), // From execute
         .reg_rs2(execute_forward_reg_rs2), // From execute
@@ -251,6 +281,8 @@ module Riscv151 #(
         .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem, imem
     );
     
+    assign execute_forward_rs1_sel = execute_fwd_ctrl_rs1_sel;
+    assign execute_forward_rs2_sel = execute_fwd_ctrl_rs2_sel;
     assign execute_forward_wb_data = wb_sel_wb_out;
     assign execute_forward_reg_rs1 = execute_reg_rs1;
     assign execute_forward_reg_rs2 = execute_reg_rs2;
@@ -268,6 +300,8 @@ module Riscv151 #(
         .alu2_data(alu_sel_alu2_data) // To alu
     );
     
+    assign alu_sel_alu1_sel = control_alu1_sel;
+    assign alu_sel_alu2_sel = control_alu2_sel;
     assign alu_sel_rs1_data = execute_forward_rs1_data;
     assign alu_sel_rs2_data = execute_forward_rs2_data;
     assign alu_sel_pc = execute_pc;
@@ -283,6 +317,7 @@ module Riscv151 #(
     
     assign branch_comp_rs1_data = execute_forward_rs1_data;
     assign branch_comp_rs2_data = execute_forward_rs2_data;
+    assign branch_comp_brun = control_brun;
     
     alu alu (
         .alu1_data(alu_alu1_data), // From alu_sel
@@ -303,6 +338,8 @@ module Riscv151 #(
     
     dmem_wsel dmem_wsel (
         .addr(dmem_wsel_addr), // From alu
+        .we(dmem_wsel_we), // From control
+        .funct5(dmem_wsel_funct5), // From execute
         .funct3(dmem_wsel_funct3), // From execute
         .pc30(dmem_wsel_pc30), // From execute
         .dmem_wea(dmem_wsel_dmem_wea), // To dmem
@@ -310,6 +347,8 @@ module Riscv151 #(
     );
     
     assign dmem_wsel_addr = alu_alu_out;
+    assign dmem_wsel_we = control_dmem_we;
+    assign dmem_wsel_funct5 = execute_inst[6:2];
     assign dmem_wsel_funct3 = execute_inst[14:12];
     assign dmem_wsel_pc30 = execute_pc[30];
     assign dmem_we = dmem_wsel_dmem_wea;
@@ -329,7 +368,7 @@ module Riscv151 #(
         .inst_next(writeback_inst_next), // From execute
         .alu_next(writeback_alu_next), // From alu
         .pc4(writeback_pc4), // To wb_sel
-        .inst(writeback_inst), // To reg_file, load_extend
+        .inst(writeback_inst), // To reg_file, load_extend, decode_fwd_ctrl, execute_fwd_ctrl
         .alu(writeback_alu) // To wb_sel, dmem_rsel
     );
     
@@ -368,10 +407,59 @@ module Riscv151 #(
         .wb_out(wb_sel_wb_out) // To reg_file, decode_forward, execute_forward
     );
     
+    assign wb_sel_wb_sel = control_wb_sel;
     assign wb_sel_pc4 = writeback_pc4;
     assign wb_sel_alu_out = writeback_alu;
     assign wb_sel_dmem_out = load_extend_dout;
     assign wd = wb_sel_wb_out;
+    
+    fwd_ctrl decode_fwd_ctrl (
+        .rs1(decode_fwd_ctrl_rs1), // From imem_sel
+        .rs2(decode_fwd_ctrl_rs2), // From imem_sel
+        .rd(decode_fwd_ctrl_rd), // From writeback
+        .rs1_sel(decode_fwd_ctrl_rs1_sel), // To decode_forward
+        .rs2_sel(decode_fwd_ctrl_rs2_sel) // To decode_forward
+    );
+    
+    assign decode_fwd_ctrl_rs1 = imem_sel_inst[19:15];
+    assign decode_fwd_ctrl_rs2 = imem_sel_inst[24:20];
+    assign decode_fwd_ctrl_rd = writeback_inst[11:7];
+    
+    fwd_ctrl execute_fwd_ctrl (
+        .rs1(execute_fwd_ctrl_rs1), // From execute
+        .rs2(execute_fwd_ctrl_rs2), // From execute
+        .rd(execute_fwd_ctrl_rd), // From writeback
+        .rs1_sel(execute_fwd_ctrl_rs1_sel), // To execute_forward
+        .rs2_sel(execute_fwd_ctrl_rs2_sel) // To execute_forward
+    );
+    
+    assign execute_fwd_ctrl_rs1 = execute_inst[19:15];
+    assign execute_fwd_ctrl_rs2 = execute_inst[24:20];
+    assign execute_fwd_ctrl_rd = writeback_inst[11:7];
+    
+    control control (
+        .clk(clk),
+        .rst(rst),
+        .decode_inst(control_decode_inst), // From imem_sel
+        .execute_inst(control_execute_inst), // From execute
+        .writeback_inst(control_writeback_inst), // From writeback
+        .pc_sel(control_pc_sel), // To pc_sel
+        .alu1_sel(control_alu1_sel), // To alu_sel
+        .alu2_sel(control_alu2_sel), // To alu_sel
+        .brun(control_brun), // To branch_comp
+        .breq(control_breq), // From branch_comp
+        .brlt(control_brlt), // From branch_comp
+        .dmem_we(control_dmem_we), // To dmem_wsel
+        .wb_sel(control_wb_sel), // To wb_sel
+        .we(control_we) // To reg_file
+    );
+    
+    assign control_decode_inst = imem_sel_inst;
+    assign control_execute_inst = execute_inst;
+    assign control_writeback_inst = writeback_inst;
+    assign control_breq = branch_comp_breq;
+    assign control_brlt = branch_comp_brlt;
+    assign we = control_we;
     
     // On-chip UART
     uart #(
