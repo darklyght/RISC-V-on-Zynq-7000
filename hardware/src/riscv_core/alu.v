@@ -10,27 +10,27 @@ module alu (
 );
 
     always @(*)begin
-        if(funct5 == OPC_ARI_RTYPE_5 || funct5 == OPC_ARI_ITYPE_5)
+        if(funct5 == `OPC_ARI_RTYPE_5 || funct5 == `OPC_ARI_ITYPE_5)
             case(funct3)
-                FNC_ADD_SUB:
-                if (bit30 == FNC2_ADD)
+                `FNC_ADD_SUB:
+                if (bit30 == `FNC2_ADD)
                     alu_out = alu1_data + alu2_data;
                 else
                     alu_out = alu1_data - alu2_data;
-                FNC_SLL:
+                `FNC_SLL:
                 alu_out = alu1_data << alu2_data[4:0];
-                FNC_SLT:
+                `FNC_SLT:
                 alu_out = $signed(alu1_data) < $signed(alu2_data);
-                FNC_SLTU:
+                `FNC_SLTU:
                 alu_out = alu1_data < alu2_data;
-                FNC_XOR:
+                `FNC_XOR:
                 alu_out = alu1_data ^ alu2_data;
-                FNC_OR:
+                `FNC_OR:
                 alu_out = alu1_data | alu2_data;
-                FNC_AND:
+                `FNC_AND:
                 alu_out = alu1_data & alu2_data;
-                FNC_SRL_SRA:
-                if (bit30 == FNC2_SRL)
+                `FNC_SRL_SRA:
+                if (bit30 == `FNC2_SRL)
                     alu_out = alu1_data >> alu2_data[4:0];
                 else
                     alu_out = alu1_data >>> alu2_data[4:0];

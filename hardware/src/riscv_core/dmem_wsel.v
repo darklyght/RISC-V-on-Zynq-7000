@@ -11,9 +11,9 @@ module dmem_wsel (
     reg [3:0] wea;
     
     always @ (*) begin
-        if (funct5 == OPC_STORE_5)
+        if (funct5 == `OPC_STORE_5)
             case (funct3)
-                FNC_SB:
+                `FNC_SB:
                     case (addr[1:0])
                         2'b00:
                             wea = 4'b0001;
@@ -24,14 +24,14 @@ module dmem_wsel (
                         2'b11:
                             wea = 4'b1000;
                     endcase
-                FNC_SH:
+                `FNC_SH:
                     case (addr[1])
                         2'b0:
                             wea = 4'b0011;
                         2'b1:
                             wea = 4'b1100;
                     endcase
-                FNC_SW:
+                `FNC_SW:
                     wea = 4'b1111;
                 default:
                     wea = 4'b0000;

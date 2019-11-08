@@ -6,6 +6,6 @@ module wb_sel (
     output [31:0] wb_out
 );
 
-    assign wb_out = wb_sel[1] ? alu_out : wb_sel[0] ? dmem_out : pc_4;
+    assign wb_out = wb_sel[1] ? alu_out : wb_sel[0] ? dmem_out : pc4;
     
 endmodule

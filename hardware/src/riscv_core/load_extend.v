@@ -9,7 +9,7 @@ module load_extend (
 
     always @ (*) begin
         case (funct3)
-            FNC_LB:
+            `FNC_LB:
                 case (addr)
                     2'b00:
                         dout = {{24{din[7]}}, din[7:0]};
@@ -20,14 +20,14 @@ module load_extend (
                     2'b11:
                         dout = {{24{din[31]}}, din[31:24]};
                 endcase
-            FNC_LH:
+            `FNC_LH:
                 case (addr[1])
                     1'b0:
                         dout = {{16{din[15]}}, din[15:0]};
                     1'b1:
                         dout = {{16{din[31]}}, din[31:16]};
                 endcase
-            FNC_LBU:
+            `FNC_LBU:
                 case (addr)
                     2'b00:
                         dout = {24'b0, din[7:0]};
@@ -38,7 +38,7 @@ module load_extend (
                     2'b11:
                         dout = {24'b0, din[31:24]};
                 endcase
-            FNC_LHU:
+            `FNC_LHU:
                 case (addr[1])
                     2'b0:
                         dout = {16'b0, din[15:0]};

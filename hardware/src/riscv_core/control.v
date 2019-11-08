@@ -22,48 +22,48 @@ module control (
     wire branch;
     always @ (*) begin
         case (execute_inst[14:12])
-            FNC_BEQ: 
-                branch_comp = branch_comp_breq;
-            FNC_BNE:
-                branch_comp = ~branch_comp_breq;
-            FNC_BLT:
-                branch_comp = branch_comp_brlt;
-            FNC_BGE:
-                branch_comp = ~branch_comp_brlt;
-            FNC_BLTU:
-                branch_comp = branch_comp_brlt;
-            FNC_BGEU:
-                branch_comp = ~branch_comp_brlt;
+            `FNC_BEQ: 
+                branch_comp = breq;
+            `FNC_BNE:
+                branch_comp = ~breq;
+            `FNC_BLT:
+                branch_comp = brlt;
+            `FNC_BGE:
+                branch_comp = ~brlt;
+            `FNC_BLTU:
+                branch_comp = brlt;
+            `FNC_BGEU:
+                branch_comp = ~brlt;
             default:
                 branch_comp = 1'b0;
         endcase
     end
 
-    assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == OPC_JAL_5 || execute_inst[6:2] == OPC_JALR_5 || execute_inst[6:2] == OPC_BRANCH_5) && branch_comp == 1'b1;
+    assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || execute_inst[6:2] == `OPC_BRANCH_5) && branch_comp == 1'b1;
     
     assign pc_sel = branch;
     
-    assign alu1_sel = execute_inst[6:2] == OPC_AUIPC_5 || execute_inst[6:2] == OPC_JAL_5 || execute_inst[6:2] == OPC_BRANCH_5;
-    assign alu2_sel = ~(execute_inst[6:2] == OPC_ARI_RTYPE_5);
+    assign alu1_sel = execute_inst[6:2] == `OPC_AUIPC_5 || execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_BRANCH_5;
+    assign alu2_sel = ~(execute_inst[6:2] == `OPC_ARI_RTYPE_5);
     
-    assign brun = execute_inst[14:12] == FNC_BLT || execute_inst[14:12] == FNC_BGE;
+    assign brun = execute_inst[14:12] == `FNC_BLT || execute_inst[14:12] == `FNC_BGE;
     
-    assign dmem_we = execute_valid == 1'b1 && execute_inst[6:2] == OPC_STORE_5;
+    assign dmem_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_STORE_5;
     
     always @ (*) begin
-        case (inst_execute[6:2])
-            OPC_JAL_5:
+        case (execute_inst[6:2])
+            `OPC_JAL_5:
                 wb_sel = 2'b00;
-            OPC_JALR_5:
+            `OPC_JALR_5:
                 wb_sel = 2'b00;
-            OPC_LOAD_5:
+            `OPC_LOAD_5:
                 wb_sel = 2'b01;
             default: // OPC_LUI_5, OPC_AUIPC_5, OPC_ARI_RTYPE_5, OPC_ARI_ITYPE_5
                 wb_sel = 2'b10;
         endcase
     end
     
-    assign we = writeback_valid == 1'b1 && (writeback_inst[6:2] == OPC_JAL_5 || writeback_inst[6:2] == OPC_JALR_5 || writeback_inst[6:2] == OPC_LOAD_5 || writeback_inst[6:2] == OPC_LUI_5 || writeback_inst[6:2] == OPC_AUIPC_5 || writeback_inst[6:2] == OPC_ARI_RTYPE_5 || writeback_inst[6:2] == OPC_ARI_ITYPE_5);
+    assign we = writeback_valid == 1'b1 && (writeback_inst[6:2] == `OPC_JAL_5 || writeback_inst[6:2] == `OPC_JALR_5 || writeback_inst[6:2] == `OPC_LOAD_5 || writeback_inst[6:2] == `OPC_LUI_5 || writeback_inst[6:2] == `OPC_AUIPC_5 || writeback_inst[6:2] == `OPC_ARI_RTYPE_5 || writeback_inst[6:2] == `OPC_ARI_ITYPE_5);
     
     always @ (posedge clk) begin
         decode_valid <= 1'b1;

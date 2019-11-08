@@ -222,8 +222,8 @@ module Riscv151 #(
     );
     
     assign imem_sel_pc30 = decode_pc[30];
-    assign ra1 = imem_sel[19:15];
-    assign ra2 = imem_sel[24:20];
+    assign ra1 = imem_sel_inst[19:15];
+    assign ra2 = imem_sel_inst[24:20];
     assign imem_sel_bios_douta = bios_douta;
     assign imem_sel_imem_doutb = imem_doutb;
     

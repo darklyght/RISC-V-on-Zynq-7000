@@ -34,6 +34,7 @@
 `define OPC_LOAD_5      5'b00000
 `define OPC_ARI_RTYPE_5 5'b01100
 `define OPC_ARI_ITYPE_5 5'b00100
+`define OPC_CSR_5       5'b11100
 
 // ***** Function codes *****
 
