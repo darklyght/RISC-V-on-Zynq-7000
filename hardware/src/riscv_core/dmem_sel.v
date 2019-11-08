@@ -15,9 +15,9 @@ module dmem_sel (
     output [3:0] imem_wea
 );
 
-    assign bios_addrb = addr[11:0];
-    assign dmem_addra = addr[13:0];
-    assign imem_addra = addr[13:0];
+    assign bios_addrb = addr[13:2];
+    assign dmem_addra = addr[15:2];
+    assign imem_addra = addr[15:2];
     assign dmem_dina = din;
     assign imem_dina = din;
     
