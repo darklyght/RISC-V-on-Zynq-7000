@@ -1,27 +1,11 @@
-module dmem_sel (
+module dmem_wsel (
     input [31:0] addr,
-    input [31:0] din,
     input [2:0] funct3,
-	input pc30,
-    output [31:0] dout,
-    output [11:0] bios_addrb,
-    input [31:0] bios_doutb,
-    output [13:0] dmem_addra,
-    output [31:0] dmem_dina,
+    input pc30,
     output [3:0] dmem_wea,
-    input [31:0] dmem_douta,
-    output [13:0] imem_addra,
-    output [31:0] imem_dina,
     output [3:0] imem_wea
 );
 
-    assign bios_addrb = addr[13:2];
-    assign dmem_addra = addr[15:2];
-    assign imem_addra = addr[15:2];
-    assign dmem_dina = din;
-    assign imem_dina = din;
-    
-	
     reg [3:0] wea;
     
     always @ (*) begin
@@ -53,6 +37,5 @@ module dmem_sel (
 
     assign dmem_wea = addr[28] == 1'b1 ? wea : 4'b0000;
     assign imem_wea = addr[29] == 1'b1 && pc30 == 1'b1 ? wea : 4'b0000;
-    assign dout = addr[31:28] == 4'b0100 ? bios_doutb : dmem_douta;
 
 endmodule
