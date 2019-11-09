@@ -14,6 +14,8 @@ module control (
     output brun,
     input breq,
     input brlt,
+    output csr_we,
+    output csr_sel,
     output dmem_we,
     output reg [1:0] wb_sel,
     output we
@@ -57,6 +59,9 @@ module control (
     assign alu2_sel = ~(execute_inst[6:2] == `OPC_ARI_RTYPE_5);
     
     assign brun = execute_inst[14:12] == `FNC_BLT || execute_inst[14:12] == `FNC_BGE;
+    
+    assign csr_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_CSR_5;
+    assign csr_sel = execute_inst[14];
     
     assign dmem_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_STORE_5;
     

@@ -126,6 +126,11 @@ module Riscv151 #(
     wire branch_comp_brlt;
     wire branch_comp_breq;
     
+    wire csr_csr_we;
+    wire csr_csr_sel;
+    wire [31:0] csr_reg_rs1;
+    wire [31:0] csr_imm;
+    
     wire [31:0] alu_alu1_data;
     wire [31:0] alu_alu2_data;
     wire [2:0] alu_funct3;
@@ -180,6 +185,8 @@ module Riscv151 #(
     wire control_brun;
     wire control_breq;
     wire control_brlt;
+    wire control_csr_we;
+    wire control_csr_sel;
     wire control_dmem_we;
     wire [1:0] control_wb_sel;
     wire control_we;
@@ -254,7 +261,7 @@ module Riscv151 #(
         .inst(execute_inst), // To writeback, alu, dmem_wsel, execute_fwd_ctrl
         .reg_rs1(execute_reg_rs1), // To execute_forward
         .reg_rs2(execute_reg_rs2), // To execute_forward
-        .imm(execute_imm)
+        .imm(execute_imm) // To alu_sel, csr
     );
     
     assign execute_pc_next = decode_pc;
@@ -269,7 +276,7 @@ module Riscv151 #(
         .wb_data(execute_forward_wb_data), // From wb_sel
         .reg_rs1(execute_forward_reg_rs1), // From execute
         .reg_rs2(execute_forward_reg_rs2), // From execute
-        .rs1_data(execute_forward_rs1_data), // To alu_sel, branch_comp
+        .rs1_data(execute_forward_rs1_data), // To alu_sel, branch_comp, csr
         .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem, imem
     );
     
@@ -310,6 +317,20 @@ module Riscv151 #(
     assign branch_comp_rs1_data = execute_forward_rs1_data;
     assign branch_comp_rs2_data = execute_forward_rs2_data;
     assign branch_comp_brun = control_brun;
+    
+    csr csr (
+        .clk(clk),
+        .rst(rst),
+        .csr_we(csr_csr_we), // From control
+        .csr_sel(csr_csr_sel), // From control
+        .reg_rs1(csr_reg_rs1), // From execute_forward
+        .imm(csr_imm) // From execute
+    );
+    
+    assign csr_csr_we = control_csr_we;
+    assign csr_csr_sel = control_csr_sel;
+    assign csr_reg_rs1 = execute_forward_rs1_data;
+    assign csr_imm = execute_imm;
     
     alu alu (
         .alu1_data(alu_alu1_data), // From alu_sel
@@ -422,6 +443,8 @@ module Riscv151 #(
         .brun(control_brun), // To branch_comp
         .breq(control_breq), // From branch_comp
         .brlt(control_brlt), // From branch_comp
+        .csr_we(control_csr_we), // To csr
+        .csr_sel(control_csr_sel), // To csr
         .dmem_we(control_dmem_we), // To dmem_wsel
         .wb_sel(control_wb_sel), // To wb_sel
         .we(control_we) // To reg_file
