@@ -52,6 +52,11 @@ module assembly_testbench();
         `ifdef IVERILOG
             $dumpfile("assembly_testbench.fst");
             $dumpvars(0,assembly_testbench);
+            $dumpvars(0,CPU.rf.registers[1]);
+            $dumpvars(0,CPU.rf.registers[2]);
+            $dumpvars(0,CPU.rf.registers[10]);
+            $dumpvars(0,CPU.rf.registers[11]);
+            $dumpvars(0,CPU.rf.registers[20]);
         `endif
 
         rst = 0;

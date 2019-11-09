@@ -1,6 +1,5 @@
 module reg_file (
     input clk,
-    input rst,
     input we,
     input [4:0] ra1, ra2, wa,
     input [31:0] wd,
@@ -11,15 +10,9 @@ module reg_file (
     integer i;
 
     always @ (posedge clk) begin
-        if (rst) begin
-            for (i = 0; i < 32; i = i + 1) begin
-                registers[i] <= 32'b0;
-            end
-        end else begin
-            if (we == 1'b1) begin
-                if (wa != 5'b0) begin
-                    registers[wa] <= wd;
-                end
+        if (we == 1'b1) begin
+            if (wa != 5'b0) begin
+                registers[wa] <= wd;
             end
         end
     end
