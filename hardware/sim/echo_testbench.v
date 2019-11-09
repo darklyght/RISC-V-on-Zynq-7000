@@ -47,7 +47,7 @@ module echo_testbench();
     reg done = 0;
     `define STRINGIFY_ECHO(x) `"x/../software/echo/echo.hex`"
     initial begin
-        $readmemh(`STRINGIFY_ECHO(`ABS_TOP), CPU.bios_mem.mem);
+        $readmemh("../../software/echo/echo.hex", CPU.bios_mem.mem);
 
         `ifndef IVERILOG
             $vcdpluson;
@@ -55,6 +55,11 @@ module echo_testbench();
         `ifdef IVERILOG
             $dumpfile("echo_testbench.fst");
             $dumpvars(0,echo_testbench);
+            $dumpvars(0,CPU.rf.registers[1]);
+            $dumpvars(0,CPU.rf.registers[2]);
+            $dumpvars(0,CPU.rf.registers[8]);
+            $dumpvars(0,CPU.rf.registers[14]);
+            $dumpvars(0,CPU.rf.registers[15]);
         `endif
 
         // Reset all parts

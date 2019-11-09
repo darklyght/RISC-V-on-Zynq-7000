@@ -139,15 +139,33 @@ module Riscv151 #(
     wire [31:0] alu_alu_out;
     
     wire [31:0] dmem_wsel_addr;
+    wire [31:0] dmem_wsel_reg_rs2;
     wire dmem_wsel_we;
     wire [4:0] dmem_wsel_funct5;
     wire [2:0] dmem_wsel_funct3;
     wire dmem_wsel_pc30;
+    wire [31:0] dmem_wsel_data;
     wire [3:0] dmem_wsel_dmem_wea;
     wire [3:0] dmem_wsel_imem_wea;
+    wire dmem_wsel_uart_we;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
+    
+    localparam fifo_depth = 32;
+    wire trmt_fifo_wr_en;
+    wire [7:0] trmt_fifo_din;
+    wire trmt_fifo_full;
+    wire trmt_fifo_rd_en;
+    wire [7:0] trmt_fifo_dout;
+    wire trmt_fifo_empty;
+    
+    wire recv_fifo_wr_en;
+    wire [7:0] recv_fifo_din;
+    wire recv_fifo_full;
+    wire recv_fifo_rd_en;
+    wire [7:0] recv_fifo_dout;
+    wire recv_fifo_empty;
     
     wire [31:0] writeback_pc4_next;
     wire [31:0] writeback_inst_next;
@@ -160,6 +178,9 @@ module Riscv151 #(
     wire [31:0] dmem_rsel_dout;
     wire [31:0] dmem_rsel_bios_doutb;
     wire [31:0] dmem_rsel_dmem_douta;
+    wire dmem_rsel_trmt_full;
+    wire dmem_rsel_recv_empty;
+    wire [7:0] dmem_rsel_recv_data;
     
     wire [31:0] load_extend_din;
     wire [1:0] load_extend_addr;
@@ -188,8 +209,17 @@ module Riscv151 #(
     wire control_csr_we;
     wire control_csr_sel;
     wire control_dmem_we;
+    wire [31:0] control_alu;
+    wire control_uart_re;
     wire [1:0] control_wb_sel;
     wire control_we;
+    
+    wire [7:0] uart_data_in;
+    wire uart_data_in_valid;
+    wire uart_data_in_ready;
+    wire [7:0] uart_data_out;
+    wire uart_data_out_valid;
+    wire uart_data_out_ready;
     
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
@@ -277,7 +307,7 @@ module Riscv151 #(
         .reg_rs1(execute_forward_reg_rs1), // From execute
         .reg_rs2(execute_forward_reg_rs2), // From execute
         .rs1_data(execute_forward_rs1_data), // To alu_sel, branch_comp, csr
-        .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem, imem
+        .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem_wsel, trmt_fifo
     );
     
     assign execute_forward_rs1_sel = control_execute_rs1_sel;
@@ -285,8 +315,6 @@ module Riscv151 #(
     assign execute_forward_wb_data = wb_sel_wb_out;
     assign execute_forward_reg_rs1 = execute_reg_rs1;
     assign execute_forward_reg_rs2 = execute_reg_rs2;
-    assign dmem_din = execute_forward_rs2_data;
-    assign imem_dina = execute_forward_rs2_data;
     
     alu_sel alu_sel (
         .alu1_sel(alu_sel_alu1_sel), // From control
@@ -338,7 +366,7 @@ module Riscv151 #(
         .funct3(alu_funct3), // From execute
         .funct5(alu_funct5), // From execute
         .bit30(alu_bit30), // From execute
-        .alu_out(alu_alu_out) // To writeback, dmem_wsel, bios_mem, dmem, imem
+        .alu_out(alu_alu_out) // To writeback, dmem_wsel, bios_mem, dmem, imem, control
     );
     
     assign alu_alu1_data = alu_sel_alu1_data;
@@ -352,21 +380,27 @@ module Riscv151 #(
     
     dmem_wsel dmem_wsel (
         .addr(dmem_wsel_addr), // From alu
+        .reg_rs2(dmem_wsel_reg_rs2), // From execute_forward
         .we(dmem_wsel_we), // From control
         .funct5(dmem_wsel_funct5), // From execute
         .funct3(dmem_wsel_funct3), // From execute
         .pc30(dmem_wsel_pc30), // From execute
+        .data(dmem_wsel_data), // To imem, dmem, trmt_fifo
         .dmem_wea(dmem_wsel_dmem_wea), // To dmem
-        .imem_wea(dmem_wsel_imem_wea) // To imem
+        .imem_wea(dmem_wsel_imem_wea), // To imem
+        .uart_we(dmem_wsel_uart_we) // To trmt_fifo
     );
     
     assign dmem_wsel_addr = alu_alu_out;
+    assign dmem_wsel_reg_rs2 = execute_forward_rs2_data;
     assign dmem_wsel_we = control_dmem_we;
     assign dmem_wsel_funct5 = execute_inst[6:2];
     assign dmem_wsel_funct3 = execute_inst[14:12];
     assign dmem_wsel_pc30 = execute_pc[30];
     assign dmem_we = dmem_wsel_dmem_wea;
     assign imem_wea = dmem_wsel_imem_wea;
+    assign dmem_din = dmem_wsel_data;
+    assign imem_dina = dmem_wsel_data;
     
     pc4_gen pc4_gen (
         .pc(pc4_gen_pc), // From execute
@@ -374,6 +408,40 @@ module Riscv151 #(
     );
     
     assign pc4_gen_pc = execute_pc;
+    
+    fifo #(
+        .fifo_depth(fifo_depth)
+    ) trmt_fifo (
+        .clk(clk),
+        .rst(rst),
+        .wr_en(trmt_fifo_wr_en), // From dmem_wsel
+        .din(trmt_fifo_din), // From execute_forward
+        .full(trmt_fifo_full), // To dmem_rsel
+        .rd_en(trmt_fifo_rd_en), // From uart
+        .dout(trmt_fifo_dout), // To uart
+        .empty(trmt_fifo_empty) // To uart
+    );
+    
+    assign trmt_fifo_wr_en = dmem_wsel_uart_we;
+    assign trmt_fifo_din = dmem_wsel_data[7:0];
+    assign trmt_fifo_rd_en = ~trmt_fifo_empty & uart_data_in_ready;
+    
+    fifo #(
+        .fifo_depth(fifo_depth)
+    ) recv_fifo (
+        .clk(clk),
+        .rst(rst),
+        .wr_en(recv_fifo_wr_en), // From uart
+        .din(recv_fifo_din), // From uart
+        .full(recv_fifo_full), // To uart
+        .rd_en(recv_fifo_rd_en), // From control
+        .dout(recv_fifo_dout), // To dmem_rsel
+        .empty(recv_fifo_empty) // To dmem_rsel
+    );
+    
+    assign recv_fifo_wr_en = ~recv_fifo_full & uart_data_out_valid;
+    assign recv_fifo_din = uart_data_out;
+    assign recv_fifo_rd_en = control_uart_re;
     
     writeback writeback (
         .clk(clk),
@@ -395,12 +463,18 @@ module Riscv151 #(
         .addr(dmem_rsel_addr), // From writeback
         .dout(dmem_rsel_dout), // To load_extend
         .bios_doutb(dmem_rsel_bios_doutb), // From bios_mem
-        .dmem_douta(dmem_rsel_dmem_douta) // From dmem
+        .dmem_douta(dmem_rsel_dmem_douta), // From dmem
+        .trmt_full(dmem_rsel_trmt_full), // From trmt_fifo
+        .recv_empty(dmem_rsel_recv_empty), // From recv_fifo
+        .recv_data(dmem_rsel_recv_data) //From recv_fifo
     );
     
     assign dmem_rsel_addr = writeback_alu;
     assign dmem_rsel_bios_doutb = bios_doutb;
     assign dmem_rsel_dmem_douta = dmem_dout;
+    assign dmem_rsel_trmt_full = trmt_fifo_full;
+    assign dmem_rsel_recv_empty = recv_fifo_empty;
+    assign dmem_rsel_recv_data = recv_fifo_dout;
     
     load_extend load_extend (
         .din(load_extend_din), // From dmem_rsel
@@ -446,6 +520,8 @@ module Riscv151 #(
         .csr_we(control_csr_we), // To csr
         .csr_sel(control_csr_sel), // To csr
         .dmem_we(control_dmem_we), // To dmem_wsel
+        .alu(control_alu), // From alu
+        .uart_re(control_uart_re), // To recv_fifo
         .wb_sel(control_wb_sel), // To wb_sel
         .we(control_we) // To reg_file
     );
@@ -455,6 +531,7 @@ module Riscv151 #(
     assign control_writeback_inst = writeback_inst;
     assign control_breq = branch_comp_breq;
     assign control_brlt = branch_comp_brlt;
+    assign control_alu = alu_alu_out;
     assign we = control_we;
     
     // On-chip UART
@@ -463,14 +540,19 @@ module Riscv151 #(
     ) on_chip_uart (
         .clk(clk),
         .reset(rst),
-        .data_in(),
-        .data_in_valid(),
-        .data_out_ready(),
+        .data_in(uart_data_in), // From trmt_fifo
+        .data_in_valid(uart_data_in_valid), // From trmt_fifo
+        .data_out_ready(uart_data_out_ready), // From recv_fifo
         .serial_in(FPGA_SERIAL_RX),
 
-        .data_in_ready(),
-        .data_out(),
-        .data_out_valid(),
+        .data_in_ready(uart_data_in_ready), // To trmt_fifo
+        .data_out(uart_data_out), // To recv_fifo
+        .data_out_valid(uart_data_out_valid), // To recv_fifo
         .serial_out(FPGA_SERIAL_TX)
     );
+    
+    assign uart_data_in = trmt_fifo_dout;
+    assign uart_data_in_valid = ~trmt_fifo_empty;
+    assign uart_data_out_ready = ~recv_fifo_full;
+    
 endmodule

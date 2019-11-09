@@ -17,6 +17,8 @@ module control (
     output csr_we,
     output csr_sel,
     output dmem_we,
+    input [31:0] alu,
+    output uart_re,
     output reg [1:0] wb_sel,
     output we
 );
@@ -45,7 +47,7 @@ module control (
         endcase
     end
 
-    assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || execute_inst[6:2] == `OPC_BRANCH_5) && branch_comp == 1'b1;
+    assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || (execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1));
     
     assign pc_sel = branch;
     
@@ -64,6 +66,8 @@ module control (
     assign csr_sel = execute_inst[14];
     
     assign dmem_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_STORE_5;
+    
+    assign uart_re = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_LOAD_5 && alu[31] == 1'b1 && alu[7:0] == 8'h04;
     
     always @ (*) begin
         case (writeback_inst[6:2])
