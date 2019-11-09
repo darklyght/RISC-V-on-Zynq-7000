@@ -1,4 +1,5 @@
 module fwd_ctrl (
+    input writeback_valid,
     input [4:0] rs1,
     input [4:0] rs2,
     input [4:0] rd,

@@ -7,7 +7,7 @@ module decode (
 
     always @ (posedge clk) begin
         if (rst)
-            pc <= 32'b0;
+            pc <= 32'h3FFF_FFFC;
         else
             pc <= pc_next;
     end

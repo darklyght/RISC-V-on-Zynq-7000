@@ -62,6 +62,7 @@ module Riscv151 #(
     wire [31:0] rd1, rd2;
     reg_file rf (
         .clk(clk),
+        .rst(rst),
         .we(we),
         .ra1(ra1), .ra2(ra2), .wa(wa),
         .wd(wd),
@@ -167,12 +168,14 @@ module Riscv151 #(
     wire [31:0] wb_sel_dmem_out;
     wire [31:0] wb_sel_wb_out;
     
+    wire decode_fwd_ctrl_writeback_valid;
     wire [4:0] decode_fwd_ctrl_rs1;
     wire [4:0] decode_fwd_ctrl_rs2;
     wire [4:0] decode_fwd_ctrl_rd;
     wire decode_fwd_ctrl_rs1_sel;
     wire decode_fwd_ctrl_rs2_sel;
     
+    wire execute_fwd_ctrl_writeback_valid;
     wire [4:0] execute_fwd_ctrl_rs1;
     wire [4:0] execute_fwd_ctrl_rs2;
     wire [4:0] execute_fwd_ctrl_rd;
@@ -332,6 +335,7 @@ module Riscv151 #(
     assign alu_alu2_data = alu_sel_alu2_data;
     assign alu_funct3 = execute_inst[14:12];
     assign alu_funct5 = execute_inst[6:2];
+    assign alu_bit30 = execute_inst[30];
     assign bios_addrb = alu_alu_out[13:2];
     assign dmem_addr = alu_alu_out[15:2];
     assign imem_addra = alu_alu_out[15:2];

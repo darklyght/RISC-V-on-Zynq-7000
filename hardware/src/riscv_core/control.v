@@ -66,7 +66,10 @@ module control (
     assign we = writeback_valid == 1'b1 && (writeback_inst[6:2] == `OPC_JAL_5 || writeback_inst[6:2] == `OPC_JALR_5 || writeback_inst[6:2] == `OPC_LOAD_5 || writeback_inst[6:2] == `OPC_LUI_5 || writeback_inst[6:2] == `OPC_AUIPC_5 || writeback_inst[6:2] == `OPC_ARI_RTYPE_5 || writeback_inst[6:2] == `OPC_ARI_ITYPE_5);
     
     always @ (posedge clk) begin
-        decode_valid <= 1'b1;
+        if (rst)
+            decode_valid <= 1'b0;
+        else
+            decode_valid <= 1'b1;
     end
     
     always @ (posedge clk) begin
