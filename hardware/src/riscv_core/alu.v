@@ -20,9 +20,9 @@ module alu (
                 `FNC_SLL:
                 alu_out = alu1_data << alu2_data[4:0];
                 `FNC_SLT:
-                alu_out = $signed(alu1_data) < $signed(alu2_data);
+                alu_out = {31'b0, $signed(alu1_data) < $signed(alu2_data)};
                 `FNC_SLTU:
-                alu_out = alu1_data < alu2_data;
+                alu_out = {31'b0, alu1_data < alu2_data};
                 `FNC_XOR:
                 alu_out = alu1_data ^ alu2_data;
                 `FNC_OR:

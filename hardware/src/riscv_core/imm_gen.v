@@ -14,7 +14,7 @@ module imm_gen (
             `OPC_JAL_5:
                 imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
             `OPC_JALR_5:
-                imm = {{20{inst[31]}}, inst[11:0]};
+                imm = {{20{inst[31]}}, inst[31:20]};
             `OPC_BRANCH_5:
                 imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
             `OPC_STORE_5:

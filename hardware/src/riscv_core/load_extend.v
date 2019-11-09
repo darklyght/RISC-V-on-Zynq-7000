@@ -40,9 +40,9 @@ module load_extend (
                 endcase
             `FNC_LHU:
                 case (addr[1])
-                    2'b0:
+                    1'b0:
                         dout = {16'b0, din[15:0]};
-                    2'b1:
+                    1'b1:
                         dout = {16'b0, din[31:16]};
                 endcase
             default: //FNC_LW

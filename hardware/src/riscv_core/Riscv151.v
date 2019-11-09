@@ -202,8 +202,8 @@ module Riscv151 #(
     assign pc_sel_pc_sel = control_pc_sel;
     assign pc_sel_alu = alu_alu_out;
     assign pc_sel_pc = decode_pc;
-    assign bios_addra = pc_sel_pc_next;
-    assign imem_addrb = pc_sel_pc_next;
+    assign bios_addra = pc_sel_pc_next[13:2];
+    assign imem_addrb = pc_sel_pc_next[15:2];
     
     decode decode (
         .clk(clk),
@@ -232,7 +232,7 @@ module Riscv151 #(
        .imm(imm_gen_imm) // To execute
     );
     
-    assign imem_gen_inst = imem_sel_inst;
+    assign imm_gen_inst = imem_sel_inst[31:2];
     
     forward_sel decode_forward (
         .rs1_sel(decode_forward_rs1_sel), // From decode_fwd_ctrl
@@ -332,9 +332,9 @@ module Riscv151 #(
     assign alu_alu2_data = alu_sel_alu2_data;
     assign alu_funct3 = execute_inst[14:12];
     assign alu_funct5 = execute_inst[6:2];
-    assign bios_addrb = alu_alu_out;
-    assign dmem_addr = alu_alu_out;
-    assign imem_addra = alu_alu_out;
+    assign bios_addrb = alu_alu_out[13:2];
+    assign dmem_addr = alu_alu_out[15:2];
+    assign imem_addra = alu_alu_out[15:2];
     
     dmem_wsel dmem_wsel (
         .addr(dmem_wsel_addr), // From alu
@@ -396,7 +396,7 @@ module Riscv151 #(
     );
     
     assign load_extend_din = dmem_rsel_dout;
-    assign load_extend_addr = writeback_alu;
+    assign load_extend_addr = writeback_alu[1:0];
     assign load_extend_funct3 = writeback_inst[14:12];
     
     wb_sel wb_sel (

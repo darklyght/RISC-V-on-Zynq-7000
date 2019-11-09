@@ -26,9 +26,9 @@ module dmem_wsel (
                     endcase
                 `FNC_SH:
                     case (addr[1])
-                        2'b0:
+                        1'b0:
                             wea = 4'b0011;
-                        2'b1:
+                        1'b1:
                             wea = 4'b1100;
                     endcase
                 `FNC_SW:
