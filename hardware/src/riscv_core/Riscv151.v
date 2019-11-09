@@ -148,6 +148,7 @@ module Riscv151 #(
     wire [3:0] dmem_wsel_dmem_wea;
     wire [3:0] dmem_wsel_imem_wea;
     wire dmem_wsel_uart_we;
+    wire dmem_wsel_counter_reset;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
@@ -181,6 +182,8 @@ module Riscv151 #(
     wire dmem_rsel_trmt_full;
     wire dmem_rsel_recv_empty;
     wire [7:0] dmem_rsel_recv_data;
+    wire [31:0] dmem_rsel_counter_cycle;
+    wire [31:0] dmem_rsel_counter_inst;
     
     wire [31:0] load_extend_din;
     wire [1:0] load_extend_addr;
@@ -211,6 +214,8 @@ module Riscv151 #(
     wire control_dmem_we;
     wire [31:0] control_alu;
     wire control_uart_re;
+    wire control_counter_cycle_valid;
+    wire control_counter_inst_valid;
     wire [1:0] control_wb_sel;
     wire control_we;
     
@@ -220,6 +225,12 @@ module Riscv151 #(
     wire [7:0] uart_data_out;
     wire uart_data_out_valid;
     wire uart_data_out_ready;
+    
+    wire counter_reset;
+    wire counter_decode_valid;
+    wire counter_writeback_valid;
+    wire [31:0] counter_cycle_count;
+    wire [31:0] counter_inst_count;
     
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
@@ -388,7 +399,8 @@ module Riscv151 #(
         .data(dmem_wsel_data), // To imem, dmem, trmt_fifo
         .dmem_wea(dmem_wsel_dmem_wea), // To dmem
         .imem_wea(dmem_wsel_imem_wea), // To imem
-        .uart_we(dmem_wsel_uart_we) // To trmt_fifo
+        .uart_we(dmem_wsel_uart_we), // To trmt_fifo
+        .counter_reset(dmem_wsel_counter_reset) // To counter
     );
     
     assign dmem_wsel_addr = alu_alu_out;
@@ -466,7 +478,9 @@ module Riscv151 #(
         .dmem_douta(dmem_rsel_dmem_douta), // From dmem
         .trmt_full(dmem_rsel_trmt_full), // From trmt_fifo
         .recv_empty(dmem_rsel_recv_empty), // From recv_fifo
-        .recv_data(dmem_rsel_recv_data) //From recv_fifo
+        .recv_data(dmem_rsel_recv_data), // From recv_fifo
+        .counter_cycle(dmem_rsel_counter_cycle), // From counter
+        .counter_inst(dmem_rsel_counter_inst) // From counter
     );
     
     assign dmem_rsel_addr = writeback_alu;
@@ -475,6 +489,8 @@ module Riscv151 #(
     assign dmem_rsel_trmt_full = trmt_fifo_full;
     assign dmem_rsel_recv_empty = recv_fifo_empty;
     assign dmem_rsel_recv_data = recv_fifo_dout;
+    assign dmem_rsel_counter_cycle = counter_cycle_count;
+    assign dmem_rsel_counter_inst = counter_inst_count;
     
     load_extend load_extend (
         .din(load_extend_din), // From dmem_rsel
@@ -522,6 +538,8 @@ module Riscv151 #(
         .dmem_we(control_dmem_we), // To dmem_wsel
         .alu(control_alu), // From alu
         .uart_re(control_uart_re), // To recv_fifo
+        .counter_cycle_valid(control_counter_cycle_valid), // To counter
+        .counter_inst_valid(control_counter_inst_valid), // To counter
         .wb_sel(control_wb_sel), // To wb_sel
         .we(control_we) // To reg_file
     );
@@ -554,5 +572,19 @@ module Riscv151 #(
     assign uart_data_in = trmt_fifo_dout;
     assign uart_data_in_valid = ~trmt_fifo_empty;
     assign uart_data_out_ready = ~recv_fifo_full;
+    
+    counter counter (
+        .clk(clk),
+        .rst(rst),
+        .reset(counter_reset), // From dmem_wsel
+        .decode_valid(counter_decode_valid), // From control
+        .writeback_valid(counter_writeback_valid), // From control
+        .cycle_count(counter_cycle_count), // To dmem_rsel
+        .inst_count(counter_inst_count) // To dmem_rsel
+    );
+    
+    assign counter_reset = dmem_wsel_counter_reset;
+    assign counter_decode_valid = control_counter_cycle_valid;
+    assign counter_writeback_valid = control_counter_inst_valid;
     
 endmodule

@@ -8,7 +8,8 @@ module dmem_wsel (
     output reg [31:0] data,
     output [3:0] dmem_wea,
     output [3:0] imem_wea,
-    output uart_we
+    output uart_we,
+    output counter_reset
 );
 
     reg [3:0] wea;
@@ -64,5 +65,6 @@ module dmem_wsel (
     assign dmem_wea = addr[28] == 1'b1 ? wea : 4'b0000;
     assign imem_wea = addr[29] == 1'b1 && pc30 == 1'b1 ? wea : 4'b0000;
     assign uart_we = addr[31] == 1'b1 && addr[7:0] == 8'h08 ? wea[0] : 1'b0;
+    assign counter_reset = addr[31] == 1'b1 && addr[7:0] == 8'h18 ? 1'b1 : 1'b0;
 
 endmodule
