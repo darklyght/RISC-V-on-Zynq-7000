@@ -75,7 +75,7 @@ module z1top #(
     ) b_parser (
         .clk(cpu_clk_g),
         .in(BUTTONS),
-        .out({reset_button, clean_buttons})
+        .out({clean_buttons, reset_button})
     );
 
     Riscv151 #(

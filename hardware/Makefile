@@ -11,7 +11,7 @@ VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1n
 SIM_RTL                 += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
 SIM_MODELS              := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim_models -type f -name "*.v"))
 IVERILOG                := iverilog
-IVERILOG_OPTS           := -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core
+IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core
 VVP                     := vvp
 
 sim/%.tb: sim/%.v $(RTL)

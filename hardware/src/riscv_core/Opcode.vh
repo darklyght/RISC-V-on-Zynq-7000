@@ -1,5 +1,5 @@
 // List of RISC-V opcodes and funct codes.
-// Use `include "opcode.v" to use these in the decoder
+// Use `include "Opcode.vh" to use these in the decoder
 
 `ifndef OPCODE
 `define OPCODE
