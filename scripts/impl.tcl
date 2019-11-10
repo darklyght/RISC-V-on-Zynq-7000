@@ -6,12 +6,13 @@ if {[string trim ${CONSTRAINTS}] ne ""} {
   read_xdc ${CONSTRAINTS}
 }
 
-opt_design
-place_design
+opt_design -directive Explore
+place_design -directive Explore
 write_checkpoint -force ${TOP}_placed.dcp
 report_utilization -file post_place_utilization.rpt
-phys_opt_design
-route_design
+phys_opt_design -directive Explore
+route_design -directive AggressiveExplore
+phys_opt_design -directive AggressiveExplore
 
 write_checkpoint -force ${TOP}_routed.dcp
 write_verilog -force post_route.v

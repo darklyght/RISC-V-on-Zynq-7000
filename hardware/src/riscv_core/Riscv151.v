@@ -68,21 +68,30 @@ module Riscv151 #(
         .rd1(rd1), .rd2(rd2)
     );
 
-    wire pc_sel_pc_sel;
+    wire [1:0] pc_sel_pc_sel;
     wire [31:0] pc_sel_alu;
+    wire [31:0] pc_sel_predict;
     wire [31:0] pc_sel_pc;
     wire [31:0] pc_sel_pc_next;
+    
+    wire [31:0] decode_pc_next;
+    wire [31:0] decode_pc;
     
     wire imem_sel_pc30;
     wire [31:0] imem_sel_inst;
     wire [31:0] imem_sel_bios_douta;
     wire [31:0] imem_sel_imem_doutb;
     
-    wire [31:0] decode_pc_next;
-    wire [31:0] decode_pc;
-    
     wire [31:2] imm_gen_inst;
     wire [31:0] imm_gen_imm;
+    
+    wire [31:0] branch_pred_pc;
+    wire [31:0] branch_pred_imm;
+    wire [6:2] branch_pred_inst;
+    wire branch_pred_branch;
+    wire branch_pred_result;
+    wire branch_pred_predict;
+    wire [31:0] branch_pred_next_pc;
     
     wire decode_forward_rs1_sel;
     wire decode_forward_rs2_sel;
@@ -199,7 +208,10 @@ module Riscv151 #(
     wire [31:0] control_decode_inst;
     wire [31:0] control_execute_inst;
     wire [31:0] control_writeback_inst;
-    wire control_pc_sel;
+    wire [1:0] control_pc_sel;
+    wire control_predict;
+    wire control_pred_en;
+    wire control_result;
     wire control_decode_rs1_sel;
     wire control_decode_rs2_sel;
     wire control_execute_rs1_sel;
@@ -235,12 +247,14 @@ module Riscv151 #(
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
         .alu(pc_sel_alu), // From alu
+        .predict(pc_sel_predict), // From branch_pred
         .pc(pc_sel_pc), // From decode
         .pc_next(pc_sel_pc_next) // To decode, bios_mem, imem
     );
     
     assign pc_sel_pc_sel = control_pc_sel;
     assign pc_sel_alu = alu_alu_out;
+    assign pc_sel_predict = branch_pred_next_pc;
     assign pc_sel_pc = decode_pc;
     assign bios_addra = pc_sel_pc_next[13:2];
     assign imem_addrb = pc_sel_pc_next[15:2];
@@ -249,14 +263,14 @@ module Riscv151 #(
         .clk(clk),
         .rst(rst),
         .pc_next(decode_pc_next), // From pc_sel
-        .pc(decode_pc) // To execute
+        .pc(decode_pc) // To execute, branch_pred
     );
     
     assign decode_pc_next = pc_sel_pc_next;
     
     imem_sel imem_sel (
         .pc30(imem_sel_pc30), // From decode
-        .inst(imem_sel_inst), // To reg_file, imm_gen, execute, decode_fwd_ctrl
+        .inst(imem_sel_inst), // To reg_file, imm_gen, execute, decode_fwd_ctrl, branch_pred
         .bios_douta(imem_sel_bios_douta), // From bios_mem
         .imem_doutb(imem_sel_imem_doutb) // From imem
     );
@@ -269,10 +283,28 @@ module Riscv151 #(
     
     imm_gen imm_gen (
        .inst(imm_gen_inst), // From imem_sel
-       .imm(imm_gen_imm) // To execute
+       .imm(imm_gen_imm) // To execute, branch_pred
     );
     
     assign imm_gen_inst = imem_sel_inst[31:2];
+    
+    branch_pred branch_pred (
+        .clk(clk),
+        .rst(rst),
+        .pc(branch_pred_pc), //From decode
+        .imm(branch_pred_imm), // From imm_gen
+        .inst(branch_pred_inst), // From imem_sel
+        .branch(branch_pred_branch), // From control
+        .result(branch_pred_result), // From control
+        .predict(branch_pred_predict), // To pc_sel
+        .next_pc(branch_pred_next_pc) // To pc_sel
+    );
+    
+    assign branch_pred_pc = decode_pc;
+    assign branch_pred_imm = imm_gen_imm;
+    assign branch_pred_inst = imem_sel_inst[6:2];
+    assign branch_pred_branch = control_pred_en;
+    assign branch_pred_result = control_result;
     
     forward_sel decode_forward (
         .rs1_sel(decode_forward_rs1_sel), // From control
@@ -524,6 +556,9 @@ module Riscv151 #(
         .execute_inst(control_execute_inst), // From execute
         .writeback_inst(control_writeback_inst), // From writeback
         .pc_sel(control_pc_sel), // To pc_sel
+        .predict(control_predict), // From branch_pred
+        .pred_en(control_pred_en), // To branch_pred
+        .result(control_result), // To branch_pred
         .decode_rs1_sel(control_decode_rs1_sel), // To decode_forward
         .decode_rs2_sel(control_decode_rs2_sel), // To decode_forward
         .execute_rs1_sel(control_execute_rs1_sel), // To execute_forward
@@ -547,6 +582,7 @@ module Riscv151 #(
     assign control_decode_inst = imem_sel_inst;
     assign control_execute_inst = execute_inst;
     assign control_writeback_inst = writeback_inst;
+    assign control_predict = branch_pred_predict;
     assign control_breq = branch_comp_breq;
     assign control_brlt = branch_comp_brlt;
     assign control_alu = alu_alu_out;

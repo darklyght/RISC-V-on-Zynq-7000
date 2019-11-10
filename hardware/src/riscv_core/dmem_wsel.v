@@ -21,30 +21,30 @@ module dmem_wsel (
                     case (addr[1:0])
                         2'b00: begin
                             wea = 4'b0001;
-                            data = reg_rs2;
+                            data = {24'b0, reg_rs2[7:0]};
                         end
                         2'b01: begin
                             wea = 4'b0010;
-                            data = reg_rs2 << 8;
+                            data = {16'b0, reg_rs2[7:0], 8'b0};
                         end
                         2'b10: begin
                             wea = 4'b0100;
-                            data = reg_rs2 << 16;
+                            data = {8'b0, reg_rs2[7:0], 16'b0};
                         end
                         2'b11: begin
                             wea = 4'b1000;
-                            data = reg_rs2 << 24;
+                            data = {reg_rs2[7:0], 24'b0};
                         end
                     endcase
                 `FNC_SH:
                     case (addr[1])
                         1'b0: begin
                             wea = 4'b0011;
-                            data = reg_rs2;
+                            data = {16'b0, reg_rs2[15:0]};
                         end
                         1'b1: begin
                             wea = 4'b1100;
-                            data = reg_rs2 << 16;
+                            data = {reg_rs2[15:0], 16'b0};
                         end
                     endcase
                 `FNC_SW: begin
@@ -64,7 +64,7 @@ module dmem_wsel (
 
     assign dmem_wea = addr[28] == 1'b1 ? wea : 4'b0000;
     assign imem_wea = addr[29] == 1'b1 && pc30 == 1'b1 ? wea : 4'b0000;
-    assign uart_we = addr[31] == 1'b1 && addr[7:0] == 8'h08 ? wea[0] : 1'b0;
-    assign counter_reset = addr[31] == 1'b1 && addr[7:0] == 8'h18 ? 1'b1 : 1'b0;
+    assign uart_we = addr[31] == 1'b1 && addr[5:3] == 3'b001 ? wea[0] : 1'b0;
+    assign counter_reset = addr[31] == 1'b1 && addr[5:3] == 3'b011 ? 1'b1 : 1'b0;
 
 endmodule

@@ -4,7 +4,10 @@ module control (
     input [31:0] decode_inst,
     input [31:0] execute_inst,
     input [31:0] writeback_inst,
-    output pc_sel,
+    output [1:0] pc_sel,
+    input predict,
+    output pred_en,
+    output result,
     output decode_rs1_sel,
     output decode_rs2_sel,
     output execute_rs1_sel,
@@ -28,6 +31,7 @@ module control (
     reg decode_valid;
     reg execute_valid;
     reg writeback_valid;
+    reg execute_predict;
     reg branch_comp;
     wire branch;
     always @ (*) begin
@@ -48,10 +52,20 @@ module control (
                 branch_comp = 1'b0;
         endcase
     end
+    
+    always @ (posedge clk) begin
+        if (rst)
+            execute_predict <= 1'b0;
+        else
+            execute_predict <= predict;
+    end
 
     assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || (execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1));
     
-    assign pc_sel = branch;
+    assign pc_sel = {execute_valid & execute_predict ^ branch, decode_valid & predict};
+    
+    assign pred_en = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5;
+    assign result = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1;
     
     assign decode_rs1_sel = writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[19:15] == writeback_inst[11:7] ? 1'b1 : 1'b0;
     assign decode_rs2_sel = writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[24:20] == writeback_inst[11:7] ? 1'b1 : 1'b0;
@@ -100,7 +114,7 @@ module control (
         if (rst) begin
             execute_valid <= 1'b0;
         end else begin
-            if (branch)
+            if (execute_valid & execute_predict ^ branch)
                 execute_valid <= 1'b0;
             else
                 execute_valid <= decode_valid;

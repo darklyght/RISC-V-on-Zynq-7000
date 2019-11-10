@@ -40,9 +40,9 @@ module z1top #(
         .COMPENSATION         ("BUF_IN"),  // Not "ZHOLD"
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (5),
-        .CLKFBOUT_MULT        (34),
+        .CLKFBOUT_MULT        (36),
         .CLKFBOUT_PHASE       (0.000),
-        .CLKOUT0_DIVIDE       (17),
+        .CLKOUT0_DIVIDE       (9),
         .CLKOUT0_PHASE        (0.000),
         .CLKOUT0_DUTY_CYCLE   (0.500),
         .CLKIN1_PERIOD        (8.000)

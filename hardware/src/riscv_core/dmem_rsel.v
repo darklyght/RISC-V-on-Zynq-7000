@@ -15,17 +15,11 @@ module dmem_rsel (
             4'b0100:
                 dout = bios_doutb;
             4'b1000:
-                case (addr[7:0])
-                    8'h00:
-                        dout = {30'b0, ~recv_empty, ~trmt_full};
-                    8'h04:
-                        dout = {24'b0, recv_data};
-                    8'h10:
-                        dout = counter_cycle;
-                    8'h14:
-                        dout = counter_inst;
+                case (addr[5:4])
+                    2'b00:
+                        dout = addr[2] ? {24'b0, recv_data} : {30'b0, ~recv_empty, ~trmt_full};
                     default:
-                        dout = dmem_douta;
+                        dout = addr[2] ? counter_inst : counter_cycle;
                 endcase
             default:
                 dout = dmem_douta;
