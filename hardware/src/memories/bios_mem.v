@@ -23,7 +23,7 @@ module bios_mem (
     `define STRINGIFY_BIOS(x) `"x/../software/bios151v3/bios151v3.hex`"
     `ifdef SYNTHESIS
         initial begin
-            $readmemh(`STRINGIFY_BIOS(`ABS_TOP), mem);
+            $readmemh("../../../software/bios151v3/bios151v3.hex", mem);
         end
     `endif
 endmodule
