@@ -43,7 +43,7 @@ module uart_transmitter #(
             end
             SENDING: begin
                 /* verilator lint_off WIDTH */
-                if (bit_counter == 4'd9 && clock_counter == SYMBOL_EDGE_TIME - 'b1)
+                if (bit_counter == 4'd9 && clock_counter >= SYMBOL_EDGE_TIME - 'b1)
                 /* verilator lint_on WIDTH */
                     next_state = IDLE;
                 else

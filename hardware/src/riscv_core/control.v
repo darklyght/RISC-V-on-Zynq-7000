@@ -63,7 +63,7 @@ module control (
     assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || (execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1));
     
     assign pc_sel[1] = execute_valid & execute_predict ^ branch;
-    assign pc_sel[0] = pc_sel[1] ? execute_predict & ~branch : decode_valid & predict;
+    assign pc_sel[0] = execute_valid & execute_predict ^ branch ? execute_predict & ~branch : decode_valid & predict;
     
     assign pred_en = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5;
     assign result = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1;

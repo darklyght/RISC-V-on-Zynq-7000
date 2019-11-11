@@ -44,7 +44,7 @@ module c_testbench();
     reg done = 0;
     `define STRINGIFY_ASM(x) `"x/../software/assembly_tests/assembly_tests.hex`"
     initial begin
-        $readmemh("../../software/c_test/c_test.hex", CPU.bios_mem.mem);
+        $readmemh("../../software/bios151v3/bios151v3.hex", CPU.bios_mem.mem);
 
         `ifndef IVERILOG
             $vcdpluson;
@@ -61,7 +61,7 @@ module c_testbench();
         repeat (30) @(posedge clk);             // Hold reset for 30 cycles
         rst = 0;
 
-        repeat(1000) @ (posedge clk);
+        repeat(100000) @ (posedge clk);
         $finish;
 
         `ifndef IVERILOG
