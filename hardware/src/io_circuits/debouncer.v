@@ -14,5 +14,41 @@ module debouncer #(
     // and should output a bus of 1-bit signals that hold high when their respective counter saturates
 
     // Remove this line once you create your synchronizer
-    assign debounced_signal = 0;
+    
+    genvar i;
+    
+    wire sample_pulse;
+    reg [wrapping_counter_width-1:0] wrapping_counter = 'b0;
+    reg [saturating_counter_width-1:0] saturating_counter [width-1:0];
+    
+    generate
+        for (i = 0; i < width; i = i + 1) begin
+            initial begin
+                saturating_counter[i] = 'b0;
+            end
+        end
+    endgenerate
+    
+    always @ (posedge clk) begin
+        wrapping_counter <= wrapping_counter + 'b1;
+        if (wrapping_counter == sample_count_max) begin
+            wrapping_counter <= 'b0;
+        end
+    end
+    
+    assign sample_pulse = wrapping_counter == sample_count_max;
+    
+    generate
+        for (i = 0; i < width; i = i + 1) begin
+            always @ (posedge clk) begin
+                if (glitchy_signal[i] == 1'b1 && sample_pulse == 1'b1 && saturating_counter[i] < pulse_count_max) begin
+                    saturating_counter[i] <= saturating_counter[i] + 'b1;
+                end else if (glitchy_signal[i] == 1'b0) begin
+                    saturating_counter[i] <= 'b0;
+                end
+            end
+            assign debounced_signal[i] = saturating_counter[i] == pulse_count_max;
+        end
+    endgenerate
+    
 endmodule

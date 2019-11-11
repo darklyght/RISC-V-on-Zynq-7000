@@ -8,5 +8,18 @@ module synchronizer #(parameter width = 1) (
     // and should output a vector of 1-bit synchronous signals that are synchronized to the input clk
 
     // Remove this line once you create your synchronizer
-    assign sync_signal = 0;
+    
+    genvar i;
+    
+    reg [1:0] sync_reg [width-1:0];
+    
+    generate
+        for (i = 0; i < width; i = i + 1) begin
+            always @ (posedge clk) begin
+                sync_reg[i] <= {async_signal[i], sync_reg[i][1]};
+            end
+            assign sync_signal[i] = sync_reg[i][0];
+        end
+    endgenerate
+    
 endmodule
