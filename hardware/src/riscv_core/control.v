@@ -62,16 +62,17 @@ module control (
 
     assign branch = execute_valid == 1'b1 && (execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_JALR_5 || (execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1));
     
-    assign pc_sel = {execute_valid & execute_predict ^ branch, decode_valid & predict};
+    assign pc_sel[1] = execute_valid & execute_predict ^ branch;
+    assign pc_sel[0] = pc_sel[1] ? execute_predict & ~branch : decode_valid & predict;
     
     assign pred_en = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5;
     assign result = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_BRANCH_5 && branch_comp == 1'b1;
+
+    assign decode_rs1_sel = we && writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[19:15] == writeback_inst[11:7] ? 1'b1 : 1'b0;
+    assign decode_rs2_sel = we && writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[24:20] == writeback_inst[11:7] ? 1'b1 : 1'b0;
     
-    assign decode_rs1_sel = writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[19:15] == writeback_inst[11:7] ? 1'b1 : 1'b0;
-    assign decode_rs2_sel = writeback_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && decode_inst[24:20] == writeback_inst[11:7] ? 1'b1 : 1'b0;
-    
-    assign execute_rs1_sel = writeback_valid == 1'b1 && execute_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && execute_inst[19:15] == writeback_inst[11:7] ? 1'b1 : 1'b0;
-    assign execute_rs2_sel = writeback_valid == 1'b1 && execute_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && execute_inst[24:20] == writeback_inst[11:7] ? 1'b1 : 1'b0;
+    assign execute_rs1_sel = we && writeback_valid == 1'b1 && execute_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && execute_inst[19:15] == writeback_inst[11:7] ? 1'b1 : 1'b0;
+    assign execute_rs2_sel = we && writeback_valid == 1'b1 && execute_valid == 1'b1 && writeback_inst[11:7] != 5'b0 && execute_inst[24:20] == writeback_inst[11:7] ? 1'b1 : 1'b0;
     
     assign alu1_sel = execute_inst[6:2] == `OPC_AUIPC_5 || execute_inst[6:2] == `OPC_JAL_5 || execute_inst[6:2] == `OPC_BRANCH_5;
     assign alu2_sel = ~(execute_inst[6:2] == `OPC_ARI_RTYPE_5);

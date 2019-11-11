@@ -71,6 +71,7 @@ module Riscv151 #(
     wire [1:0] pc_sel_pc_sel;
     wire [31:0] pc_sel_alu;
     wire [31:0] pc_sel_predict;
+    wire [31:0] pc_sel_revert;
     wire [31:0] pc_sel_pc;
     wire [31:0] pc_sel_pc_next;
     
@@ -248,6 +249,7 @@ module Riscv151 #(
         .pc_sel(pc_sel_pc_sel), // From control
         .alu(pc_sel_alu), // From alu
         .predict(pc_sel_predict), // From branch_pred
+        .revert(pc_sel_revert), // From pc4_gen
         .pc(pc_sel_pc), // From decode
         .pc_next(pc_sel_pc_next) // To decode, bios_mem, imem
     );
@@ -255,6 +257,7 @@ module Riscv151 #(
     assign pc_sel_pc_sel = control_pc_sel;
     assign pc_sel_alu = alu_alu_out;
     assign pc_sel_predict = branch_pred_next_pc;
+    assign pc_sel_revert = pc4_gen_pc4;
     assign pc_sel_pc = decode_pc;
     assign bios_addra = pc_sel_pc_next[13:2];
     assign imem_addrb = pc_sel_pc_next[15:2];
@@ -448,7 +451,7 @@ module Riscv151 #(
     
     pc4_gen pc4_gen (
         .pc(pc4_gen_pc), // From execute
-        .pc4(pc4_gen_pc4) // To writeback
+        .pc4(pc4_gen_pc4) // To writeback, pc_sel
     );
     
     assign pc4_gen_pc = execute_pc;

@@ -13,10 +13,10 @@ module alu (
         if(funct5 == `OPC_ARI_RTYPE_5 || funct5 == `OPC_ARI_ITYPE_5)
             case(funct3)
                 `FNC_ADD_SUB:
-                if (bit30 == `FNC2_ADD)
-                    alu_out = alu1_data + alu2_data;
-                else
+                if (funct5 == `OPC_ARI_RTYPE_5 && bit30 == ~`FNC2_ADD)
                     alu_out = alu1_data - alu2_data;
+                else
+                    alu_out = alu1_data + alu2_data;
                 `FNC_SLL:
                 alu_out = alu1_data << alu2_data[4:0];
                 `FNC_SLT:
