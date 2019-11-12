@@ -1,0 +1,193 @@
+1        
+0 Opcode.vh
+74
++cli+4
++define+ABS_TOP=/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware
++incdir+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core
++itf+/share/instsww/synopsys/G-2012.09/amd64/lib/vcsdp.tab
++lint=all,noVCDE
++memcbk
++v2k
++vcsd
++vpi
+-Mamsrun=
+-Masflags=
+-Mcc=gcc
+-Mcfl= -pipe -O -I/share/instsww/synopsys/G-2012.09/include
+-Mcplusplus=g++
+-Mcrt0=
+-Mcrtn=
+-Mcsrc=
+-Mldflags=
+-Mobjects= /share/instsww/synopsys/G-2012.09/amd64/lib/libvirsim.so /share/instsww/synopsys/G-2012.09/amd64/lib/liberrorinf.so /share/instsww/synopsys/G-2012.09/amd64/lib/libsnpsmalloc.so
+-Mout=bios_testbench.tb
+-Msaverestoreobj=/share/instsww/synopsys/G-2012.09/amd64/lib/vcs_save_restore_new.o
+-Msyslibs=-ldl -lm
+-Mvcsaceobjs=
+-Xcbug=0x1
+-Xnotice
+-debug=4
+-full64
+-gen_obj
+-line
+-o bios_testbench.tb
+-pp_used
+-sverilog
+-timescale=1ns/10ps
+-top
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/BUFG.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/PLLE2_ADV.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/glbl.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/audio/tone_generator.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/button_parser.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/debouncer.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/edge_detector.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/fifo.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/synchronizer.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart_receiver.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart_transmitter.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/bios_mem.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/dmem.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/imem.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/Riscv151.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/alu.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/alu_sel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/branch_comp.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/branch_pred.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/control.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/counter.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/csr.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/decode.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/dmem_rsel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/dmem_wsel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/execute.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/forward_sel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/imem_sel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/imm_gen.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/load_extend.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/pc4_gen.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/pc_sel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/reg_file.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/wb_sel.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/writeback.v
+/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/z1top.v
+/share/instsww/synopsys/G-2012.09/amd64/bin/vcs1
+bios_testbench
+bios_testbench.v
+67
+sysc_uni_pwd=/home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim
+XILINXD_LICENSE_FILE=2100@license-srv.eecs.berkeley.edu
+XDG_VTNR=1
+XDG_SESSION_TYPE=x11
+XDG_SESSION_PATH=/org/freedesktop/DisplayManager/Session5
+XDG_SESSION_ID=2348
+XDG_SESSION_DESKTOP=mate
+XDG_SEAT_PATH=/org/freedesktop/DisplayManager/Seat0
+XDG_SEAT=seat0
+XDG_RUNTIME_DIR=/run/user/111562
+XDG_GREETER_DATA_DIR=/var/lib/lightdm-data/eecs151-abl
+XDG_DATA_DIRS=/home/cc/eecs151/fa19/class/eecs151-abl/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share
+XDG_CURRENT_DESKTOP=MATE
+XAUTHORITY=/var/run/lightdm/eecs151-abl/xauthority
+VTE_VERSION=5202
+VMR_MODE_FLAG=64
+VCS_PATH=/share/instsww/synopsys/G-2012.09/bin
+VCS_MODE_FLAG=64
+VCS_HOME=/share/instsww/synopsys/G-2012.09
+VCS_DEPTH=0
+VCS_ARG_ADDED_FOR_TMP=1
+VCS_ARCH=amd64
+UNAME=/bin/uname
+TOOL_HOME=/share/instsww/synopsys/G-2012.09/amd64
+SYNOPSYS_ROOT=/home/ff/cs250/tools/synopsys
+SSH_AUTH_SOCK=/home/cc/eecs151/fa19/class/eecs151-abl/.cache/keyring-KCS1A0/ssh
+SSH_AGENT_PID=6192
+SNPSLMD_LICENSE_FILE=27005@license-srv.eecs.berkeley.edu:/share/instsww/synopsys/G-2012.09/flexlm//license.dat
+SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/6074,unix/unix:/tmp/.ICE-unix/6074
+SERIALTTY=/dev/ttyUSB0
+SCRNAME=vcs
+SCRIPT_NAME=vcs
+RUNAS=/share/b/runas/x86_64
+QT_GRAPHICSSYSTEM_CHECKED=1
+QTLIB=/usr/lib64/qt-3.3/lib
+QTINC=/usr/lib64/qt-3.3/include
+QTDIR=/usr/lib64/qt-3.3
+OVA_UUM=0
+OS=Linux
+NNTPSERVER=news.csua.berkeley.edu
+MGLS_LICENSE_FILE=1717@license-srv.eecs.berkeley.edu
+MFLAGS=
+MATE_DESKTOP_SESSION_ID=this-is-deprecated
+MASTERDIR=/home/ff/eecs151
+MASTER=eecs151
+MAKELEVEL=1
+MAKEFLAGS=
+LM_PROJECT=bwrc_users
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+LC_ALL=C
+INSTMANPATH=/usr/local/man:/usr/sww/man:/usr/man:/usr/share/man:/usr/java/man:/share/b/grading/man:/home/aa/projects/scheme/lib/man
+IMSETTINGS_MODULE=none
+IMSETTINGS_INTEGRATE_DESKTOP=yes
+HOSTNAME=c125m-9.eecs.berkeley.edu
+HISTCONTROL=ignoredups
+GTK_OVERLAY_SCROLLING=0
+GNOME_KEYRING_CONTROL=/home/cc/eecs151/fa19/class/eecs151-abl/.cache/keyring-KCS1A0
+GDMSESSION=mate
+DESKTOP_SESSION=mate
+DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-PpZNATshfX,guid=00ae83f81d911c56d9f016e85dcadc42
+CVS_RSH=ssh
+CONFIG_SHELL=/usr/bin/ksh
+COLORTERM=truecolor
+CDS_LIC_FILE=5280@bisc.EECS.Berkeley.EDU
+ARCH=x86_64
+AGILEESOFD_LICENSE_FILE=27000@license-srv.eecs.berkeley.edu
+ADS_LICENSE_FILE=27000@license-srv.eecs.berkeley.edu
+0
+40
+1573324469 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/Opcode.vh
+1573578264 bios_testbench.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/glbl.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/PLLE2_ADV.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/sim_models/BUFG.v
+1573500142 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/z1top.v
+1573353261 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/counter.v
+1573353261 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/branch_pred.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/writeback.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/wb_sel.v
+1573324469 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/reg_file.v
+1573430680 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/pc_sel.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/pc4_gen.v
+1573257970 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/load_extend.v
+1573257970 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/imm_gen.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/imem_sel.v
+1573324469 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/csr.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/forward_sel.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/execute.v
+1573576230 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/dmem_wsel.v
+1573353261 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/dmem_rsel.v
+1573262037 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/decode.v
+1573497848 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/control.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/branch_comp.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/alu_sel.v
+1573520618 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/alu.v
+1573500170 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/riscv_core/Riscv151.v
+1573528680 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/imem.v
+1573528674 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/dmem.v
+1573507000 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/memories/bios_mem.v
+1573578378 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart_transmitter.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart_receiver.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/uart.v
+1573502035 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/synchronizer.v
+1573324469 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/fifo.v
+1573502035 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/edge_detector.v
+1573576386 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/debouncer.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/io_circuits/button_parser.v
+1573256853 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/hardware/src/audio/tone_generator.v
+1345792088 /share/instsww/synopsys/G-2012.09/amd64/lib/vcsdp.tab
+4
+0 
+1345792743 /share/instsww/synopsys/G-2012.09/amd64/lib/libvirsim.so
+1345792505 /share/instsww/synopsys/G-2012.09/amd64/lib/liberrorinf.so
+1345792224 /share/instsww/synopsys/G-2012.09/amd64/lib/libsnpsmalloc.so
+1573578387 bios_testbench.tb.daidir

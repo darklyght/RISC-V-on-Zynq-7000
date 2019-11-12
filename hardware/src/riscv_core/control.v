@@ -82,7 +82,7 @@ module control (
     assign csr_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_CSR_5;
     assign csr_sel = execute_inst[14];
     
-    assign dmem_we = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_STORE_5;
+    assign dmem_we = execute_valid == 1'b1;
     
     assign uart_re = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_LOAD_5 && alu[31] == 1'b1 && alu[7:0] == 8'h04;
     

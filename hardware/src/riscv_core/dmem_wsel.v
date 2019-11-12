@@ -15,7 +15,7 @@ module dmem_wsel (
     reg [3:0] wea;
     
     always @ (*) begin
-        if (funct5 == `OPC_STORE_5)
+        if (we == 1'b1 && funct5 == `OPC_STORE_5)
             case (funct3)
                 `FNC_SB:
                     case (addr[1:0])
