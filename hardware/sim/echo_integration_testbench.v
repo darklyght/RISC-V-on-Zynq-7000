@@ -49,9 +49,8 @@ module echo_integration_testbench ();
     );
 
     reg done = 0;
-    `define STRINGIFY_ECHO(x) `"x/../software/echo/echo.hex`"
     initial begin
-        $readmemh(`STRINGIFY_ECHO(`ABS_TOP), top.cpu.bios_mem.mem);
+        $readmemh("../../software/echo/echo.hex", top.cpu.bios_mem.mem);
 
         `ifndef IVERILOG
             $vcdpluson;

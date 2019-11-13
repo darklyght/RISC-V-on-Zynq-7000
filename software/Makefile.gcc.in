@@ -31,8 +31,9 @@ endif
 $(TARGET).elf: $(SOURCES)
 	$(RISCV)-gcc $(GCC_OPTS) -I$(LIB_PATH) $^ -o $@
 	$(RISCV)-objdump -D -Mnumeric $@ > $(basename $@).dump
-	$(RISCV)-strip -R .comment $@
-	$(RISCV)-elf2hex --bit-width 32 --input $@ > $(basename $@).hex
+	$(RISCV)-strip -R .comment -R .note.gnu.build-id $@
+	$(RISCV)-objcopy $(basename $@).elf -O binary $(basename $@).bin
+	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).hex
 
 clean:
 	rm -f *.elf *.dump *.hex
