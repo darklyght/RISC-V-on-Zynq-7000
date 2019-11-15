@@ -10,3 +10,7 @@
 *.vpd
 *.dump
 *.hex
+*.swp
+*.daidir
+csrc
+ucli.key

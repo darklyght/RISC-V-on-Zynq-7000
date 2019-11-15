@@ -15,7 +15,7 @@ IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TO
 VVP                     := vvp
 
 sim/%.tb: sim/%.v $(RTL)
-	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $*
+	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $* -top glbl
 
 sim/%.vpd: sim/%.tb
 	cd sim && ./$*.tb +verbose=1 +vpdfile+$*.vpd |& tee $*.log
