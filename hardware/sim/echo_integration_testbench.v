@@ -75,11 +75,11 @@ module echo_integration_testbench ();
         fork
             begin
                 // Wait until off-chip UART's transmit is ready
-                while (!data_in_ready) @(posedge sys_clk);
+                while (!data_in_ready) @(posedge sys_clk); #1;
 
                 // Send a UART packet to the CPU from the off-chip UART
                 data_in_valid = 1'b1;
-                @(posedge sys_clk);
+                @(posedge sys_clk); #1;
                 data_in_valid = 1'b0;
 
                 // Watch data_in (7A) be sent over FPGA_SERIAL_RX to the CPU's on-chip UART
@@ -91,12 +91,12 @@ module echo_integration_testbench ();
                 // which should command the on-chip UART's transmitter to send the same data back to the off-chip UART.
 
                 // Wait for the off-chip UART to receive the echoed data
-                while (!data_out_valid) @(posedge sys_clk);
+                while (!data_out_valid) @(posedge sys_clk); #1;
                 $display("Got %h", data_out);
 
                 // Clear the off-chip UART's receiver for another UART packet
                 data_out_ready = 1'b1;
-                @(posedge sys_clk);
+                @(posedge sys_clk); #1;
                 data_out_ready = 1'b0;
                 done = 1;
             end
