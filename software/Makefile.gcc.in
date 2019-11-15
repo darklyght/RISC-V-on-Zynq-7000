@@ -36,6 +36,6 @@ $(TARGET).elf: $(SOURCES)
 	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).hex
 
 clean:
-	rm -f *.elf *.dump *.hex
+	rm -f *.elf *.dump *.hex *.bin
 
 .PHONY: target
