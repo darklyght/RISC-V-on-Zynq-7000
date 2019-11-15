@@ -1,5 +1,6 @@
 module buttons (
     input clk,
+    input rst,
     input [3:0] buttons,
     output reg wr_en,
     output reg [3:0] din,

@@ -262,7 +262,7 @@ module Riscv151 #(
     
     wire [3:0] buttons_buttons;
     wire buttons_wr_en;
-    wire buttons_din;
+    wire [3:0] buttons_din;
     wire buttons_full;
     
     wire leds_we;
@@ -676,8 +676,9 @@ module Riscv151 #(
     assign buttons_fifo_din = buttons_din;
     assign buttons_fifo_rd_en = control_buttons_re;
     
-    buttons buttons (
+    buttons gpio_buttons (
         .clk(clk),
+        .rst(rst),
         .buttons(buttons_buttons), // From external
         .wr_en(buttons_wr_en), // To buttons_fifo
         .din(buttons_din), // To buttons_fifo
@@ -687,7 +688,7 @@ module Riscv151 #(
     assign buttons_buttons = buttons;
     assign buttons_full = buttons_fifo_full;
     
-    leds leds (
+    leds gpio_leds (
         .clk(clk),
         .rst(rst),
         .we(leds_we), // From dmem_wsel

@@ -25,7 +25,6 @@ module z1top #(
     output aud_pwm,
     output aud_sd
 );
-    assign LEDS = 6'b111111;
     assign aud_sd = 1'b1;
     wire cpu_clk, cpu_clk_g, cpu_clk_pll_lock;
     wire cpu_clk_pll_fb_out, cpu_clk_pll_fb_in;
