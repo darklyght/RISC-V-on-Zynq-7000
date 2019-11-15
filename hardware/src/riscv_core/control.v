@@ -22,6 +22,7 @@ module control (
     output dmem_we,
     input [31:0] alu,
     output uart_re,
+    output buttons_re,
     output counter_cycle_valid,
     output counter_inst_valid,
     output reg [1:0] wb_sel,
@@ -85,6 +86,7 @@ module control (
     assign dmem_we = execute_valid == 1'b1;
     
     assign uart_re = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_LOAD_5 && alu[31] == 1'b1 && alu[7:0] == 8'h04;
+    assign buttons_re = execute_valid == 1'b1 && execute_inst[6:2] == `OPC_LOAD_5 && alu[31] == 1'b1 && (alu[7:0] == 8'h20 || alu[7:0] == 8'h24 || alu[7:0] == 8'h28);
     
     assign counter_cycle_valid = decode_valid;
     assign counter_inst_valid = writeback_valid;

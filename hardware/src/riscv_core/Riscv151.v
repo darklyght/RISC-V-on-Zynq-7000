@@ -4,6 +4,9 @@ module Riscv151 #(
 )(
     input clk,
     input rst,
+    input [3:0] buttons,
+    input [1:0] switches,
+    output [5:0] leds,
     input FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );
@@ -159,6 +162,7 @@ module Riscv151 #(
     wire [3:0] dmem_wsel_imem_wea;
     wire dmem_wsel_uart_we;
     wire dmem_wsel_counter_reset;
+    wire dmem_wsel_leds_we;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
@@ -194,6 +198,9 @@ module Riscv151 #(
     wire [7:0] dmem_rsel_recv_data;
     wire [31:0] dmem_rsel_counter_cycle;
     wire [31:0] dmem_rsel_counter_inst;
+    wire dmem_rsel_buttons_empty;
+    wire [3:0] dmem_rsel_buttons;
+    wire [1:0] dmem_rsel_switches;
     
     wire [31:0] load_extend_din;
     wire [1:0] load_extend_addr;
@@ -227,6 +234,7 @@ module Riscv151 #(
     wire control_dmem_we;
     wire [31:0] control_alu;
     wire control_uart_re;
+    wire control_buttons_re;
     wire control_counter_cycle_valid;
     wire control_counter_inst_valid;
     wire [1:0] control_wb_sel;
@@ -244,6 +252,22 @@ module Riscv151 #(
     wire counter_writeback_valid;
     wire [31:0] counter_cycle_count;
     wire [31:0] counter_inst_count;
+    
+    wire buttons_fifo_wr_en;
+    wire [3:0] buttons_fifo_din;
+    wire buttons_fifo_full;
+    wire buttons_fifo_rd_en;
+    wire [3:0] buttons_fifo_dout;
+    wire buttons_fifo_empty;
+    
+    wire [3:0] buttons_buttons;
+    wire buttons_wr_en;
+    wire buttons_din;
+    wire buttons_full;
+    
+    wire leds_we;
+    wire [5:0] leds_leds_in;
+    wire [5:0] leds_leds_out;
     
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
@@ -353,7 +377,7 @@ module Riscv151 #(
         .reg_rs1(execute_forward_reg_rs1), // From execute
         .reg_rs2(execute_forward_reg_rs2), // From execute
         .rs1_data(execute_forward_rs1_data), // To alu_sel, branch_comp, csr
-        .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem_wsel, trmt_fifo
+        .rs2_data(execute_forward_rs2_data) // To alu_sel, branch_comp, dmem_wsel, trmt_fifo, leds
     );
     
     assign execute_forward_rs1_sel = control_execute_rs1_sel;
@@ -435,7 +459,8 @@ module Riscv151 #(
         .dmem_wea(dmem_wsel_dmem_wea), // To dmem
         .imem_wea(dmem_wsel_imem_wea), // To imem
         .uart_we(dmem_wsel_uart_we), // To trmt_fifo
-        .counter_reset(dmem_wsel_counter_reset) // To counter
+        .counter_reset(dmem_wsel_counter_reset), // To counter
+        .leds_we(dmem_wsel_leds_we) // To leds
     );
     
     assign dmem_wsel_addr = alu_alu_out;
@@ -515,7 +540,10 @@ module Riscv151 #(
         .recv_empty(dmem_rsel_recv_empty), // From recv_fifo
         .recv_data(dmem_rsel_recv_data), // From recv_fifo
         .counter_cycle(dmem_rsel_counter_cycle), // From counter
-        .counter_inst(dmem_rsel_counter_inst) // From counter
+        .counter_inst(dmem_rsel_counter_inst), // From counter
+        .buttons_empty(dmem_rsel_buttons_empty), // From buttons_fifo
+        .buttons(dmem_rsel_buttons), // From buttons_fifo
+        .switches(dmem_rsel_switches) // From external
     );
     
     assign dmem_rsel_addr = writeback_alu;
@@ -526,6 +554,9 @@ module Riscv151 #(
     assign dmem_rsel_recv_data = recv_fifo_dout;
     assign dmem_rsel_counter_cycle = counter_cycle_count;
     assign dmem_rsel_counter_inst = counter_inst_count;
+    assign dmem_rsel_buttons_empty = buttons_fifo_empty;
+    assign dmem_rsel_buttons = buttons_fifo_dout;
+    assign dmem_rsel_switches = switches;
     
     load_extend load_extend (
         .din(load_extend_din), // From dmem_rsel
@@ -576,6 +607,7 @@ module Riscv151 #(
         .dmem_we(control_dmem_we), // To dmem_wsel
         .alu(control_alu), // From alu
         .uart_re(control_uart_re), // To recv_fifo
+        .buttons_re(control_buttons_re), // To buttons_fifo
         .counter_cycle_valid(control_counter_cycle_valid), // To counter
         .counter_inst_valid(control_counter_inst_valid), // To counter
         .wb_sel(control_wb_sel), // To wb_sel
@@ -625,5 +657,46 @@ module Riscv151 #(
     assign counter_reset = dmem_wsel_counter_reset;
     assign counter_decode_valid = control_counter_cycle_valid;
     assign counter_writeback_valid = control_counter_inst_valid;
+    
+    fifo #(
+        .data_width(4),
+        .fifo_depth(fifo_depth)
+    ) buttons_fifo (
+        .clk(clk),
+        .rst(rst),
+        .wr_en(buttons_fifo_wr_en), // From buttons
+        .din(buttons_fifo_din), // From buttons
+        .full(buttons_fifo_full), // To buttons
+        .rd_en(buttons_fifo_rd_en), // From control
+        .dout(buttons_fifo_dout), // To dmem_rsel
+        .empty(buttons_fifo_empty) // To dmem_rsel
+    );
+    
+    assign buttons_fifo_wr_en = buttons_wr_en;
+    assign buttons_fifo_din = buttons_din;
+    assign buttons_fifo_rd_en = control_buttons_re;
+    
+    buttons buttons (
+        .clk(clk),
+        .buttons(buttons_buttons), // From external
+        .wr_en(buttons_wr_en), // To buttons_fifo
+        .din(buttons_din), // To buttons_fifo
+        .full(buttons_full) // From buttons_fifo
+    );
+    
+    assign buttons_buttons = buttons;
+    assign buttons_full = buttons_fifo_full;
+    
+    leds leds (
+        .clk(clk),
+        .rst(rst),
+        .we(leds_we), // From dmem_wsel
+        .leds_in(leds_leds_in), // From execute_forward
+        .leds_out(leds_leds_out) // To external
+    );
+    
+    assign leds_we = dmem_wsel_leds_we;
+    assign leds_leds_in = execute_forward_rs2_data[5:0];
+    assign leds = leds_leds_out;
     
 endmodule

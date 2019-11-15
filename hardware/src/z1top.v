@@ -84,6 +84,9 @@ module z1top #(
     ) cpu (
         .clk(cpu_clk_g),
         .rst(reset),
+        .buttons({clean_buttons, reset_button}),
+        .switches(SWITCHES),
+        .leds(LEDS),
         .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
         .FPGA_SERIAL_TX(FPGA_SERIAL_TX)
     );
