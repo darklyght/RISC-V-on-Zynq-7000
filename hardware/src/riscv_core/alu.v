@@ -33,7 +33,7 @@ module alu (
                 if (bit30 == `FNC2_SRL)
                     alu_out = alu1_data >> alu2_data[4:0];
                 else
-                    alu_out = alu1_data >>> alu2_data[4:0];
+                    alu_out = $signed(alu1_data) >>> alu2_data[4:0];
                 default:
                     alu_out = alu1_data + alu2_data;
             endcase

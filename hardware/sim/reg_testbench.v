@@ -26,37 +26,36 @@ module reg_testbench;
 		ra2 = 5'b0;
 		wd = 32'b001;
 		wa = 5'b0;
-		#(3)
-		$display(“Write back 001 to x0, rd1:%b, rd2:%b",rd1,rd2);
-		
-		we = 1'b1;
-		ra1 = 5'b0;
-		ra2 = 5'b0;
-		wd = 32'b001;
-		wa = 5'd1;
-		#(3)
-		$display(“Write back 001 to x1, rd1:%b, rd2:%b",rd1,rd2);
+		#(10)
+		$display("Write back 001 to x0, rd1:%b, rd2:%b",rd1,rd2);
 		
 		we = 1'b1;
 		ra1 = 5'd1;
-		ra2 = 5'd0;
-		wd = 32'b010;
+		ra2 = 5'b0;
+		wd = 32'b01;
+		wa = 5'd1;
+		#(10)
+		$display("Write back 001 to x1, rd1:%b, rd2:%b",rd1,rd2);
+		
+		we = 1'b1;
+		ra1 = 5'd1;
+		ra2 = 5'd2;
+		wd = 32'b10;
 		wa = 5'd2;
-		#(3)
-		$display(“Write back 010 to x2, rd1:%b, rd2:%b",rd1,rd2);
+		#(10)
+		$display("Write back 010 to x2, rd1:%b, rd2:%b",rd1,rd2);
 
 		we = 1'b0;
 		ra1 = 5'd1;
 		ra2 = 5'd2;
-		wd = 32'b010;
+		wd = 32'b11;
 		wa = 5'd2;
-		#(3)
-		$display(“Read, rd1:%b, rd2:%b",rd1,rd2);
+		#(10)
+		$display("Read, rd1:%b, rd2:%b",rd1,rd2);
 
 		$finish();
 	end
 endmodule
-
 
 
 
