@@ -1,3 +1,5 @@
+`include "Opcode.vh"
+
 module dmem_wsel (
     input [31:0] addr,
     input [31:0] reg_rs2,
