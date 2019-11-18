@@ -497,8 +497,23 @@ Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and ch
 If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
 
 \subsection{RISC-V ISA Tests}
-\textit{Fall 19 Note:} We will be providing a test harness for running the \verb|riscv-tests| ISA test suite soon.
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
+Test the CSR instructions using hand assembly tests.
+
+To run the ISA tests:
+\begin{minted}{bash}
+git pull staff master
+git submodule update --init --recursive
+cd software/riscv-isa-tests
+make
+cd hardware
+make isa-tests
+\end{minted}
+
+The output of each test (a .log file and a .fst waveform) is stored in \verb|hardware/sim/isa|.
+To re-run a particular ISA test (e.g. \verb|add|) run \verb|make sim/add.fst|.
+
+You can expect the \verb|fence_i| test to fail, and some of the store tests may fail, but the rest should pass.
 
 \subsection{BIOS and Programming your CPU}
 \label{bios_info}
