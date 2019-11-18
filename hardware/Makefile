@@ -13,8 +13,12 @@ SIM_MODELS              := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim_
 IVERILOG                := iverilog
 IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core
 VVP                     := vvp
+ISA_TESTS               := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/../software/riscv-isa-tests -type f -name "*.hex"))
+ISA_TESTS_FILES         := $(notdir $(ISA_TESTS))
+ISA_TESTS_FST           := $(addprefix sim/isa/,$(subst .hex,.fst,$(ISA_TESTS_FILES)))
 
-sim/%.tb: sim/%.v $(RTL)
+# Simulations
+sim/%.tb: sim/%.v $(RTL) $(SIM_MODELS)
 	cd sim && $(VCS) $(VCS_OPTS) -o $*.tb $(RTL) $(SIM_MODELS) $*.v -top $* -top glbl
 
 sim/%.vpd: sim/%.tb
@@ -25,6 +29,16 @@ sim/%.tbi: sim/%.v $(RTL)
 
 sim/%.fst: sim/%.tbi
 	cd sim && $(VVP) $*.tbi -fst |& tee $*.log
+
+# ISA Tests
+sim/isa/isa_testbench.tbi: sim/isa_testbench.v $(RTL) $(SIM_MODELS)
+	mkdir -p sim/isa
+	cd sim/isa && $(IVERILOG) $(IVERILOG_OPTS) -g2012 -o isa_testbench.tbi ../isa_testbench.v $(RTL) $(SIM_MODELS)
+
+sim/isa/%.fst: sim/isa/isa_testbench.tbi $(ABS_TOP)/../software/riscv-isa-tests/%.hex
+	cd sim/isa && $(VVP) isa_testbench.tbi -fst +hex_file=$(word 2,$^) +test_name=$(basename $(notdir $(word 2,$^))) |& tee $(basename $(notdir $(word 2,$^))).log
+
+isa-tests: $(ISA_TESTS_FST)
 
 build/target.tcl: $(RTL) $(CONSTRAINTS)
 	mkdir -p build
@@ -81,8 +95,9 @@ clean-sim:
 	rm -rf *daidir sim/output.txt \
 	sim/*.tb sim/*.daidir sim/csrc \
 	sim/ucli.key sim/*.vpd sim/*.vcd \
-	sim/*.tbi sim/*.fst sim/*.jou sim/*.log sim/*.out
+	sim/*.tbi sim/*.fst sim/*.jou sim/*.log sim/*.out \
+	sim/isa
 
 
-.PHONY: setup synth impl program program-force vivado all clean %.tb
+.PHONY: setup synth impl program program-force vivado all clean isa-tests
 .PRECIOUS: sim/%.tb sim/%.tbi sim/%.fst sim/%.vpd
