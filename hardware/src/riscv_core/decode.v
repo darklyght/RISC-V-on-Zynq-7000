@@ -1,4 +1,6 @@
-module decode (
+module decode #(
+    parameter RESET_PC = 32'h4000_0000
+)(
     input clk,
     input rst,
     input [31:0] pc_next,
@@ -7,7 +9,7 @@ module decode (
 
     always @ (posedge clk) begin
         if (rst)
-            pc <= 32'h3FFF_FFFC;
+            pc <= RESET_PC - 32'd4;
         else
             pc <= pc_next;
     end

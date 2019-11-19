@@ -23,7 +23,7 @@ module branch_pred (
         if (rst) begin
             history <= 2'b0;
             for (i = 0; i < 4; i = i + 1) begin
-                history_table[i] <= 2'b0;
+                history_table[i] <= 2'b10;
             end
         end else begin
             if (branch) begin

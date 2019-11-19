@@ -286,7 +286,9 @@ module Riscv151 #(
     assign bios_addra = pc_sel_pc_next[13:2];
     assign imem_addrb = pc_sel_pc_next[15:2];
     
-    decode decode (
+    decode #(
+        .RESET_PC(RESET_PC)
+    ) decode (
         .clk(clk),
         .rst(rst),
         .pc_next(decode_pc_next), // From pc_sel

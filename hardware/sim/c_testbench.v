@@ -52,6 +52,10 @@ module c_testbench();
         `ifdef IVERILOG
             $dumpfile("c_testbench.fst");
             $dumpvars(0,c_testbench);
+            $dumpvars(0,CPU.rf.registers[1]);
+            $dumpvars(0,CPU.rf.registers[2]);
+            $dumpvars(0,CPU.rf.registers[14]);
+            $dumpvars(0,CPU.rf.registers[15]);
         `endif
 
         rst = 0;

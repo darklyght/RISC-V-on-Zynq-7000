@@ -1,3 +1,5 @@
+`include "Opcode.vh"
+
 module control (
     input clk,
     input rst,

@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 
 /* MODIFY THIS LINE WITH THE HIERARCHICAL PATH TO YOUR tohost (0x51e) CSR */
-`define CSR_PATH CPU.wd
+`define CSR_PATH CPU.csr.tohost
 
 module isa_testbench();
     reg clk, rst;

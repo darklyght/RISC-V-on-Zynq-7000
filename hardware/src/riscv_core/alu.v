@@ -38,7 +38,7 @@ module alu (
                     alu_out = alu1_data + alu2_data;
             endcase
         else
-            alu_out = alu1_data + alu2_data;
+            alu_out = (funct5 == `OPC_LUI_5) ? alu2_data : alu1_data + alu2_data;
     end
 
 endmodule
