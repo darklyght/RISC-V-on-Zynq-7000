@@ -4,7 +4,11 @@
 #include "uart.h"
 
 #define N 6
-#define DATA (int32_t *) 0x10018000
+#define MAT_SIZE (1 << (N << 1))
+#define DIM_SIZE (1 << N)
+static int32_t A[MAT_SIZE] = {0};
+static int32_t B[MAT_SIZE] = {0};
+static int32_t S[MAT_SIZE] = {0};
 
 /* Computes S = AB where A, B, and S are all of 2^N x 2^N matrices. A, B, and S
  * are stored sequentially in row-major order beginning at DATA. Prints the sum
@@ -18,7 +22,7 @@ int32_t times(int32_t a, int32_t b) {
     if (b_neg) b = -b;
     while (b) {
         if (b & 1) {
-        	result += a;
+            result += a;
         }
         a <<= 1;
         b >>= 1;
@@ -31,17 +35,12 @@ int32_t times(int32_t a, int32_t b) {
 
 uint32_t mmult() {
     int32_t sum = 0;
-    int32_t dim_size = 1 << N;
-    int32_t m_size = 1 << (N << 1);
-    int32_t* A = DATA;
-    int32_t* B = DATA + m_size;
-    int32_t* S = DATA + m_size + m_size;
     int32_t i, j, k;
-    for (i = 0; i < dim_size; i++) {
-        for (j = 0; j < dim_size; j++) {
+    for (i = 0; i < DIM_SIZE; i++) {
+        for (j = 0; j < DIM_SIZE; j++) {
             int32_t* s = S + (i << N) + j;
             *s = 0;
-            for (k = 0; k < dim_size; k++) {
+            for (k = 0; k < DIM_SIZE; k++) {
                 int32_t a = *(A + (i << N) + k);
                 int32_t b = *(B + (k << N) + j);
                 int32_t prod = times(a, b);
@@ -54,19 +53,15 @@ uint32_t mmult() {
 }
 
 void generate_matrices() {
-    int32_t* it = DATA;
-    int32_t dim_size = 1 << N;
     int32_t i, j;
-    for (i = 0; i < dim_size; i++) {
-        for (j = 0; j < dim_size; j++) {
-            *it = (i == j) ? 1 : 0;
-            it++;
+    for (i = 0; i < DIM_SIZE; i++) {
+        for (j = 0; j < DIM_SIZE; j++) {
+            *(A + (i << N) + j) = (i == j) ? 1 : 0;
         }
     }
-    for (i = 0; i < dim_size; i++) {
-        for (j = 0; j < dim_size; j++) {
-            *it = j;
-            it++;
+    for (i = 0; i < DIM_SIZE; i++) {
+        for (j = 0; j < DIM_SIZE; j++) {
+            *(B + (i << N) + j) = j;
         }
     }
 }

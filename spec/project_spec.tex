@@ -203,8 +203,6 @@ Table \ref{tab:ISA} contains all of the instructions your processor is responsib
 It contains most of the instructions specified in the RV32I Base Instruction set, and allows us to maintain a relatively simple design while still being able to have a C compiler and write interesting programs to run on the processor.
 For the specific details of each instruction, refer to sections 2.2 through 2.6 in the \href{http://riscv.org/specifications/}{RISC-V Instruction Set Manual}.
 
-You may find a \href{https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf}{RISC-V green card} helpful.
-
 \subsubsection{CSR Instructions}
 You will have to implement 2 CSR instructions to support running the standard RISC-V ISA test suite.
 A CSR (or control status register) is some state that is stored independent of the register file and the memory.
@@ -499,8 +497,36 @@ Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and ch
 If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
 
 \subsection{RISC-V ISA Tests}
-\textit{Fall 19 Note:} We will be providing a test harness for running the \verb|riscv-tests| ISA test suite soon.
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
+Test the CSR instructions using hand assembly tests.
+
+To run the ISA tests, first pull the latest skeleton changes:
+\begin{minted}{bash}
+git pull staff master
+git submodule update --init --recursive
+\end{minted}
+
+Modify line 4 of \verb|sim/isa_testbench.v| to point to the tohost CSR register in your CPU.
+Then run:
+
+\begin{minted}{bash}
+cd software/riscv-isa-tests
+make
+cd hardware
+make isa-tests
+\end{minted}
+
+The output of each test (a .log file and a .fst waveform) is stored in \verb|hardware/sim/isa|.
+To re-run a particular ISA test (e.g. \verb|add|) run \verb|make sim/isa/add.fst|.
+
+To check what tests passed run \texttt{cat sim/isa/*.log | grep -i pass}.
+To check for failures run \texttt{cat sim/isa/*.log | grep -i fail}.
+
+You can expect the \verb|fence_i| test to fail, but the rest should pass.
+If you're failing other tests, debug using the test assembly file in\\\verb|software/riscv-isa-tests/riscv-tests/isa/rv32ui| or the generated assembly dump.
+
+The \verb|RESET_PC| parameter is used in \verb|isa_testbench| to start the test in the IMEM instead of the BIOS.
+Make sure you have used it in \verb|Riscv151.v|.
 
 \subsection{BIOS and Programming your CPU}
 \label{bios_info}
@@ -535,20 +561,18 @@ If all goes well, you should see a \verb|151 >| prompt after pressing return. Th
 As an example, running \verb|sw cafef00d 10000000| should write to the data memory and running \verb|lw 10000000| should print the output \verb|10000000: cafef00d|.
 Please also pay attention that writes to the instruction memory (\verb|sw ffffffff 20000000|) do not write to the data memory, i.e. \verb|lw 10000000| still should yield \verb|cafef00d|.
 
-\textit{Fall 19 Note:} We are replacing \verb|coe_to_serial| with another script we will release soon.
-
 In addition to the command interface, the BIOS allows you to load programs to the CPU. \textit{With screen closed}, run:
 \begin{minted}[tabsize=2]{bash}
-    coe_to_serial <coe_file> <address>
+    hex_to_serial <hex_file> <address>
 \end{minted}
 
-This stores the \verb|.coe| file at the specified hex address.
-In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3} (i.e. \verb|coe_to_serial echo.coe 30000000|, assuming the \verb|.ld| file sets the base address to 0x10000000).
+This stores the \verb|.hex| file at the specified hex address.
+In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3} (i.e. \verb|hex_to_serial echo.hex 30000000|, assuming the \verb|.ld| file sets the base address to \verb|0x10000000|).
 
 You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
-For example, before making the \verb|mmult| program you should have set the set the base address to \verb|0x10006000| (see \ref{mmult}).
-Therefore, when loading the \verb|mmult| program to the FPGA you should place it into the memory that it starts aligned with the base address: \verb|coe_to_serial mmult.coe 30006000|.
-Then, you can start in in your screen session by using \verb|jal 10006000|.
+For example, before making the \verb|mmult| program you should set the set the base address to \verb|0x10000000| (see \ref{mmult}).
+Therefore, when loading the \verb|mmult| program you should load it at the base address: \verb|hex_to_serial mmult.hex 30000000|.
+Then, you can jump to the loaded \verb|mmult| program in in your screen session by using \verb|jal 10000000|.
 
 \subsection{Target Clock Frequency}
 By default, the CPU clock frequency is set at 50MHz.
@@ -571,13 +595,15 @@ If you do not get this, there is likely a problem in your CPU with one of the in
 
 The matrix multiply program requires that the stack pointer and the offset of the .text segment be set properly, otherwise the program will not execute properly.
 
-The stack pointer (set in \verb|start.s|) needs to accommodate three 64$\times$64 matrices as well as additional space for temporary results. It should be set to \verb|0x10006000| and grows downwards.
+The stack pointer (set in \verb|start.s|) should start near the top of DMEM to avoid corrupting the program instructions and data.
+It should be set to \verb|0x1000fff0| and the stack grows downwards.
 
-The .text segment offset (set in \verb|mmult.ld|) needs to accommodate the full set of instructions and static data in the mmult binary. It should be set to \verb|0x10006000| and.
+The .text segment offset (set in \verb|mmult.ld|) needs to accommodate the full set of instructions and static data (three 64$\times$64 matrices) in the mmult binary.
+It should be set to the base of DMEM: \verb|0x10000000|.
 
 The program will also output the values of your instruction and cycle counters (in hex).
 These can be used to calculate the CPI for this program.
-Your target CPI should be under 1.2, and ideally should be under 1.15.
+Your target CPI should be under 1.2.
 If your CPI exceeds this value, you will need to modify your datapath and pipeline to reduce the number of bubbles inserted for resolving control hazards (since they are the only source of extra latency in our processor).
 This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
 
@@ -609,7 +635,7 @@ It might seem overwhelming to implement all the functionality that your processo
   \item \textit{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a \verb|sw| instruction, and can be read from using a \verb|lw| instruction.
   \item \textit{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. We have provided you with the \verb|echo_testbench| which performs a test of the UART.
   \item \textit{Run the BIOS.} If everything so far has gone well, program the FPGA. Verify that the BIOS performs as expected. As a precursor to this step, you might try to build a bitstream with the BIOS memory initialized with the echo program.
-  \item \textit{Run matrix multiply.} Load the \verb|mmult| program with the \verb|coe_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
+  \item \textit{Run matrix multiply.} Load the \verb|mmult| program with the \verb|hex_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
   \item \textit{Check CPI.} Compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
 \end{enumerate}
 
@@ -652,7 +678,7 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
     \midrule
     Block Diagram & \blockDiagramDueDate & Sit down with a GSI and go over your design in detail\\
     \midrule
-    RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|coe_to_serial| to load the echo program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|coe_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should be under 1.2\\
+    RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should be under 1.2\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -697,7 +723,7 @@ The I/O extension to the memory map is in Table \ref{mem_map2}.
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
       \verb|32'h80000020| & GPIO FIFO Empty & Read & \verb|{31'b0, empty}| \\
-      \verb|32'h80000024| & GPIO FIFO Read Data & Read & \verb|{28'b0, buttons[3:0]}| \\
+      \verb|32'h80000024| & GPIO FIFO Read Data & Read & \verb|{28'b0, buttons[2:0]}| \\
       \midrule
       \verb|32'h80000028| & Switches & Read & \verb|{30'b0, SWITCHES[1:0]}| \\
       \midrule
@@ -714,7 +740,7 @@ Modify \verb|z1top.v| and \verb|Riscv151.v| by instantiating your FIFO, hooking 
 
 \subsubsection{User I/O Test Program}
 The \verb|software/user_io_test| tests the FIFO and user I/O integration.
-After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|coe_to_serial user_io_test.coe 30006000|.
+After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|hex_to_serial user_io_test.hex 30006000|.
 Then \verb|screen| and \verb|jal 10006000| from the BIOS to jump into the user I/O test program.
 
 This program has several commands to help you debug and verify functionality:
@@ -765,7 +791,7 @@ Now, we have a file called \verb|music.h| that has a static array declaration fi
 To build the \verb|music_streamer| program and place it on your processor, execute:
 \begin{minted}[frame=single]{bash}
 make
-coe_to_serial music_streamer.coe 3000a000
+hex_to_serial music_streamer.hex 3000a000
 screen $SERIALTTY 115200
 151> jal 1000a000
 \end{minted}
@@ -802,7 +828,6 @@ The \verb|music_streamer| functions exactly like it does in Lab 3, but the state
 
 The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
 
-
 \subsection{Subtractive Synth}
 
 \subsection{Checkpoint 3 Deliverables Summary}
@@ -816,6 +841,7 @@ The program will print out information as you transition the state machine, edit
   \end{tabular}
 \end{center}
 
+\iffalse
 \section{\dfsTaskName: Power Management Unit with Dynamic Frequency Scaling}
 \subsection{Checkpoint 4 Deliverables Summary}
 \begin{center}
@@ -827,6 +853,7 @@ The program will print out information as you transition the state machine, edit
     \bottomrule
   \end{tabular}
 \end{center}
+\fi
 
 \pagebreak
 
@@ -978,7 +1005,7 @@ Not included in the above tabulations are point assignments for extra credit as 
     1 \& 2: RISCV151 Processor & Design Review &  \blockDiagramDueDate\\
      & In-Lab Checkoff & \baseCPUDueDate \\
     \midrule
-    3: IO, FIFOs, Video/Graphics & In-Lab Checkoff &  \audioDueDate \\
+    3: IOs, FIFOs, PWM Controller, Synth & In-Lab Checkoff &  \audioDueDate \\
      & Project Interview & \\
     \midrule
     Final Checkoff, Extra Credit, &    In-Lab Checkoff        & \finalCheckoffDueDate \\
@@ -1056,47 +1083,46 @@ modify the BIOS at any point in the project.
 \subsection{Loading the BIOS}
 For the first checkpoint, the BIOS is loaded into the Instruction memory when you first build it.
 As shown in the Checkpoint 1 specification, this is made possible by instantiating your
-instruction memory to the BIOS file by building the block RAM with the biosv3.coe file. If you
-want to instantiate a modified BIOS you will have to change this .coe file in your block RAM
+instruction memory to the BIOS file by building the block RAM with the \verb|bios151v3.hex| file. If you
+want to instantiate a modified BIOS you will have to change this .hex file in your block RAM
 directory and rebuild your design and the memory.
 
-To do this, simply cd to the /software/biosv3 directory and make the .coe file by running
-“make”. This should generate the .coe file using the compiler tailored to our ISA. Copy the
-resulting .coe file to the instruction memory block RAM directory and build the block RAM. The
-block RAM will then be built instantiated with the contents of the .coe file.
+To do this, simply cd to the \verb|software/bios151v3| directory and make the .hex file by running
+“make”. This should generate the .hex file using the compiler tailored to our ISA. The
+block RAM will be instantiated with the contents of the .hex file.
 When you get your design to synthesize and impact to the board, open up screen using the
 same command from Lab 5:
 
 \verb|screen $SERIALTTY 115200|
 
 Once you are in \verb|screen|, if you CPU design is working correctly you should be able to hit Enter
-and a carrot prompt `>' will show up on the screen. If this doesn’t work, try hitting the reset
+and a carrot prompt \verb|'>'| will show up on the screen. If this doesn’t work, try hitting the reset
 button on the FPGA which is the center compass switch and hit enter. If you can’t get the BIOS
 carrot to come up, then your design is not working and you will have to fix it.
 
 \subsection{Loading Your Own Programs}
 The BIOS that we provide you is written so that you can actually load your own programs for
 testing purposes and benchmarking. Once you instantiate your BIOS block RAM with the
-\verb|biosv3.coe| file and synthesize your design, you can transfer your own program files over the
+\verb|bios151v3.hex| file and synthesize your design, you can transfer your own program files over the
 serial line.
 
-To load you own programs into the memory, you need to first have the .coe file for the program
+To load you own programs into the memory, you need to first have the .hex file for the program
 compiled. You can do this by copying the software directory of one of our C programs folders in
 /software directory and editing the files. You can write your own MIPS program by writing
 test code to the .s file or write your own c code by modifying the .c file.
-Once you have the .coe file for your program, impact your board with your design and run:
+Once you have the .hex file for your program, impact your board with your design and run:
 
-\verb|coe_to_serial <file name> <target address>|
+\verb|hex_to_serial <file name> <target address>|
 
-The <file name> field corresponds to the .coe file that you are to uploading to the instruction
-memory. The <target address> field corresponds to the location in memory you want to write
+The \verb|<file name>| field corresponds to the .hex file that you are to uploading to the instruction
+memory. The \verb|<target address>| field corresponds to the location in memory you want to write
 your program to.
 
 Once you have uploaded the file, you can fire up screen and run the command:
 
 \verb|jal <target hex address>|
 
-Where the <target hex address> is where you stored the location of the coe file over
+Where the \verb|<target hex address>| is where you stored the location of the hex file over
 serial. Note that our design does not implement memory protection so try to avoid storing your
 program over your BIOS memory. Also note that the instruction memory size for the first
 checkpoint is limited in address size so large programs may fail to load.
@@ -1105,7 +1131,7 @@ memory.
 
 \subsection{The BIOS Program}
 The BIOS itself is a fairly simple program and composes of a glorified infinite loop that waits for
-user input. If you open the biosv3.c file, you will see that the main method composes of a
+user input. If you open the \verb|bios151v3.c| file, you will see that the main method composes of a
 large for loop that prints a prompt and gets user input by calling the \verb|read_token| method.
 If at any time your program execution or BIOS hangs or behaves unexpected, you can hit the
 reset button on your board to reset the program execution to the main method.
@@ -1146,7 +1172,7 @@ conforms to the design specification.
 
 \subsection{Command List}
 The following commands are built into the BIOS that we provide for you. All values are
-interpreted in hexadecimal and do not require any radix prefix (ex. “0x”). Note that there is not
+interpreted in hexadecimal and do not require any radix prefix (ex. ``0x''). Note that there is not
 backspace command.
 
 \verb|jal <hexadecimal address>| - Moves program execution to the specified address
@@ -1164,7 +1190,7 @@ backspace command.
 \verb|sb <value> <hexadecimal address>| - Stores specified byte to address in memory
 
 There is another command file in the main() method that is used only when you execute
-\verb|coe_to_serial|. When you execute \verb|coe_to_serial|, your workstation will initiate a byte
+\verb|hex_to_serial|. When you execute \verb|hex_to_serial|, your workstation will initiate a byte
 transfer by calling this command in the BIOS. Therefore, don’t mess with this command too
 much as it is one of the more critical components of your BIOS.
 
@@ -1172,7 +1198,7 @@ much as it is one of the more critical components of your BIOS.
 Feel free to modify the BIOS code if you want to add your own features during the project for
 fun or to make your life easier. If you do choose to modify the BIOS, make sure to preserve
 essential functionality such as the I/O and the ability to store programs. In order to add
-features, you can either add to the code in the biosv3.c file or create your own c source and
+features, you can either add to the code in the \verb|bios151v3.c| file or create your own c source and
 header files. Note that you do not have access to standard c libraries so you will have to add
 them yourself if you need additional library functionality.
 \end{document}

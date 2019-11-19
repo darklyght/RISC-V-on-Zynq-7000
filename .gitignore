@@ -13,3 +13,7 @@
 .library_mapping.xml
 .project
 .settings/com.sigasi.hdt.verilog.version.prefs
+*.swp
+*.daidir
+csrc
+ucli.key

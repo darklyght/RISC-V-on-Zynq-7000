@@ -42,7 +42,6 @@ module assembly_testbench();
     endtask
 
     reg done = 0;
-    `define STRINGIFY_ASM(x) `"x/../software/assembly_tests/assembly_tests.hex`"
     initial begin
         $readmemh("../../software/assembly_tests/assembly_tests.hex", CPU.bios_mem.mem);
 

@@ -45,7 +45,6 @@ module echo_testbench();
     );
 
     reg done = 0;
-    `define STRINGIFY_ECHO(x) `"x/../software/echo/echo.hex`"
     initial begin
         $readmemh("../../software/echo/echo.hex", CPU.bios_mem.mem);
 
