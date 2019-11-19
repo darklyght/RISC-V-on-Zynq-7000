@@ -500,10 +500,16 @@ If the testbench times out it means \verb|x20| never became 1, so the processor 
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
 Test the CSR instructions using hand assembly tests.
 
-To run the ISA tests:
+To run the ISA tests, first pull the latest skeleton changes:
 \begin{minted}{bash}
 git pull staff master
 git submodule update --init --recursive
+\end{minted}
+
+Modify line 4 of \verb|sim/isa_testbench.v| to point to the tohost CSR register in your CPU.
+Then run:
+
+\begin{minted}{bash}
 cd software/riscv-isa-tests
 make
 cd hardware
@@ -511,9 +517,16 @@ make isa-tests
 \end{minted}
 
 The output of each test (a .log file and a .fst waveform) is stored in \verb|hardware/sim/isa|.
-To re-run a particular ISA test (e.g. \verb|add|) run \verb|make sim/add.fst|.
+To re-run a particular ISA test (e.g. \verb|add|) run \verb|make sim/isa/add.fst|.
 
-You can expect the \verb|fence_i| test to fail, and some of the store tests may fail, but the rest should pass.
+To check what tests passed run \texttt{cat sim/isa/*.log | grep -i pass}.
+To check for failures run \texttt{cat sim/isa/*.log | grep -i fail}.
+
+You can expect the \verb|fence_i| test to fail, but the rest should pass.
+If you're failing other tests, debug using the test assembly file in\\\verb|software/riscv-isa-tests/riscv-tests/isa/rv32ui| or the generated assembly dump.
+
+The \verb|RESET_PC| parameter is used in \verb|isa_testbench| to start the test in the IMEM instead of the BIOS.
+Make sure you have used it in \verb|Riscv151.v|.
 
 \subsection{BIOS and Programming your CPU}
 \label{bios_info}

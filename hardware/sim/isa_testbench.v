@@ -12,7 +12,8 @@ module isa_testbench();
     always #(CPU_CLOCK_PERIOD/2) clk <= ~clk;
 
     Riscv151 # (
-        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
+        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
+        .RESET_PC(32'h1000_0000)
     ) CPU(
         .clk(clk),
         .rst(rst),
@@ -27,7 +28,8 @@ module isa_testbench();
     initial begin
         $value$plusargs("hex_file=%s", hex_file);
         $value$plusargs("test_name=%s", test_name);
-        $readmemh(hex_file, CPU.bios_mem.mem);
+        $readmemh(hex_file, CPU.dmem.mem);
+        $readmemh(hex_file, CPU.imem.mem);
 
         `ifndef IVERILOG
             $vcdpluson;
