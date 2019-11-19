@@ -1,7 +1,7 @@
 SHELL := $(shell which bash) -o pipefail
 TESTS := $(notdir $(shell find riscv-tests/isa/rv32ui -type f -name "*.S"))
 TESTS_HEX := $(subst .S,.hex,$(TESTS))
-GCC_OPTS := -march=rv32i -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T env_151/link.ld
+GCC_OPTS := -march=rv32i -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T env_151/link.ld -Wl,--build-id=none
 
 RISCV_PACKAGE := riscv64-linux-gnu
 RISCV_DEFAULT := riscv64-unknown-elf
