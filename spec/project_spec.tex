@@ -703,6 +703,7 @@ If we just extended our memory map to directly include the outputs from the edge
 
 To fix this, we will buffer user inputs with a FIFO and let the processor consume them when it has time to do so.
 
+
 \subsubsection{Hookup User I/O}
 We want to give the processor access to these I/Os:
 
@@ -751,21 +752,6 @@ This program has several commands to help you debug and verify functionality:
   \item \verb|exit| - Jump back into BIOS.
 \end{itemize}
 
-\subsection{PWM Controller}
-\subsubsection{Testing the PWM Controller}
-\textbf{Fall 19 Note: This section will be updated}
-
-We have provided a program to test your tone generator and its memory map.
-It can be found in \verb|software/tone_gen_test/|.
-Compile and run the program just as you did for the \verb|user_io_test|.
-\verb|jal| to the program from the BIOS, and you can play with these commands:
-
-\begin{itemize}
-  \item \verb|on| - Flips the output enable register high
-  \item \verb|off| - Flips low the output enable register low
-  \item \verb|tone <tone_switch_period>| - Writes the user specified \verb|tone_switch_period| (32-bits in hex) to the tone switch period address
-  \item \verb|exit| - Jumps back to the BIOS
-\end{itemize}
 
 Calculate the \verb|tone_switch_period| for a 440Hz tone with a 50 MHz clock and try sending the command for that through the test program. Verify that the piezo speaker is buzzing at 440Hz by comparing it to a square wave at the same frequency via a \href{http://onlinetonegenerator.com/}{tone generator}.
 
@@ -829,7 +815,73 @@ The \verb|music_streamer| functions exactly like it does in Lab 3, but the state
 The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
 
 \subsection{Subtractive Synth}
+% https://web.wpi.edu/Images/CMS/ECE/Veilleux_Briggs_FPGA_Digital_Music_Synthesizer.pdf
+While this works to stream music, we want to take this further and build a functionally complete music synthesizer. We could almost do this now but we'd need to change our PWM generator slightly such that it functions like a Digital-Analog-Converter (DAC) that can drive your board's audio output. Ultimately, this means that rather than always feeding it a "tone switch" period that describes a specific period, we will feed in a 12 bit number that the block will convert it to a thermometer coded output. In other words, this 12 bit number will determine the duty cycle according to the following equation:
 
+\begin{equation}
+    Duty Cycle = \frac{Input_{12 Bit}}{2^{12} - 1}
+\end{equation}
+
+This duty cycle will also correspond to the DAC's output voltage as a proportion of the output's $V_{dd}$.
+
+Note that there's no more notion of volume in this block (that will be handled in software). We just want this block to act as a DAC. You'll have to memory map the input of this PWM block, but there's a catch. In order to actually use this block as a proper DAC (especially for the next part), it will need to run very fast (much faster than your processor). This implies that your PWM block will be running inside a different clock domain. As you remember, we dealt with clock domain crossings before (our debouncer took an asynchronous signal and brought it into a clock domain) but we need a little more elegant of a solution this time around. We'll need to implement a 4 phase handshake block to make sure we reliably pass data from the RISC core's clock domain to the PWM block's clock domain.
+
+A timing diagram is shown below:
+
+\begin{center}
+\includegraphics[width=\textwidth]{images/ss_r_ack.png}
+\end{center}
+
+\newpage
+
+%% http://www.ece.ubc.ca/~edc/7660.jan2018/lec11.pdf
+
+A four phase handshake requires the generation of two new synchronous signals, request and acknowledge, and the comparison of 4 edges.
+\begin{enumerate}
+    \item Request is asserted at the same time that the data is generated
+    \item Acknowledge is then asserted after the data has been captured (this could require holding the data for two clock cycles to ensure data coherency)
+    \item Then request is de-asserted by the TX side
+    \item Once request is de-asserted the acknowledge is de-asserted by the RX side
+\end{enumerate}
+
+You'll want to connect your block's as shown below. Also keep in mind that you can send a chunk of data in parallel to improve throughput. You don't have to send data in one bit at at time. On top of this you could also implement a FIFO that's read and write follow this handshaking protocol.  
+
+\begin{center}
+\includegraphics[width=\textwidth/2]{images/ss_dp_0.png}
+\end{center}
+
+\subsection{Testing our first synthesizer}
+
+So our first synthesizer will be mostly handled in software. Your RISC core will take in a keyboard input and generate the appropriate waveform to drive the DAC. After you've tested out the block and hooked it up to your core as shown above. Try running BLANK to test it on the FPGA.
+
+\subsection{How can we make it better?}
+
+While this is great, it can really only generate just a single note at a time (monophonic synthesis). Not to mention, it's limited to the CPI of the processor and this in turn limits the waveforms we can send to our DAC. How could we improve our synthesizer's throughput and implement a polyphonic synthesizer? Hardware acceleration! We can implement most of the subtractive synthesis blocks in hardware and lay the groundwork for building a really rich sounding synthesizer. The main datapath that we'll be implementing is shown below:
+
+%% Insert datapath
+    \begin{center}
+    \includegraphics[width=\textwidth]{images/ss_dp_1.png}
+    \end{center}
+
+There are three major blocks that you'll be implementing: a numerically controlled oscillator (NCO), a state variable filter (SVF) and an amplitude modulating block (ADSR - attack decay sustain and release). The datapath will take in a "note" from the RISC core, select/sum the appropriate waveforms, filter the waveforms through the SVF, apply an ADSR envelope and continuously feed samples to the DAC until the signal releases (as set by the ADSR timing). Each block has parameters that configure the synthesizer to sound a certain way for a certain instrument. The collection of parameters for a single instrument is referred to as a patch. While we could stop here, we want to be able to play multiple notes from multiple instruments at the same time and have them harmonize (polyphony). How can we go about this? It's ideally as simple as duplicating our datapath and summing the output of the ADSR blocks as shown in the figure below.
+
+% Update figure to include arbiter
+    \begin{center}
+    \includegraphics[width=\textwidth]{images/ss_dp_2.png}
+    \end{center}
+
+\subsection{Block Descriptions}
+At this point, you all should be verilog masters so we'll leave most of the design decisions up to you. To help get you started, here are some block descriptions:
+\begin{enumerate}
+    \item The NCO can be modeled as an overflowing counter and can address multiple look up tables that describe different waveforms. For example, you can have a look up table that describes a sine wave shape and then use the frequency of your overflowing counter to determine what the frequency of the outputed sine wave should be. If you want to generate complex waveforms, you can take the output from multiple different look up tables (like a sine wave and a saw-tooth) and sum them!
+    \item The SVF is an infinite impulse response (IIR) filter with multiple outputs (as shown below). You'll bassically need to define this block diagram in verilog and then put the outputs into a mux that the parameters block will control. It's important to note that $Y_h$ is a high pass filtered output, $Y_b$ is the bandpass filtered output, $Y_n$ is the notch filtered output, and lastly $Y_l$ is the low pass filtered output. For further information (such as how to pick the different values for different corner frequencies) you can refer to this reference: \href{https://karmafx.net/docs/karmafx_digitalfilters.pdf}{SVF reference}
+        \begin{center}
+        \includegraphics[width=\textwidth/2]{images/svf.png}
+        \end{center}
+    \item The ADSR block can be simplified to an "ASR" block. Meaning, you just have an "attack, sustain, and release" process. This block will take the output of the SVF and modulate the amplitude such that the resulting sound will get louder, hold, and get quiet after every key press. This also implies that the "ASR" block will determine how long a single note 'datapath' is busy playing a note.
+\end{enumerate}
+
+\end{document}
 \subsection{Checkpoint 3 Deliverables Summary}
 \begin{center}
   \begin{tabular}{m{30mm} m{35mm} m{70mm}}
