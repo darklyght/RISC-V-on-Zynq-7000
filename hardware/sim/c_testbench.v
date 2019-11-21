@@ -6,7 +6,7 @@
 module c_testbench();
     reg clk, rst;
     parameter CPU_CLOCK_PERIOD = 20;
-    parameter CPU_CLOCK_FREQ = 50_000_000;
+    parameter CPU_CLOCK_FREQ = 95_000_000;
 
     initial clk = 0;
     always #(CPU_CLOCK_PERIOD/2) clk <= ~clk;

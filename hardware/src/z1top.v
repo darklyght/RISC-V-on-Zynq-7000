@@ -6,7 +6,7 @@ module z1top #(
     parameter SYSTEM_CLOCK_FREQ = 125_000_000,
     parameter BAUD_RATE = 115_200,
     // Warning: changing the CPU_CLOCK_FREQ parameter doesn't actually change the clock frequency coming out of the PLL
-    parameter CPU_CLOCK_FREQ = 100_000_000,
+    parameter CPU_CLOCK_FREQ = 95_000_000,
     /* verilator lint_off REALCVT */
     // Sample the button signal every 500us
     parameter integer B_SAMPLE_COUNT_MAX = 0.0005 * CPU_CLOCK_FREQ,
@@ -39,7 +39,7 @@ module z1top #(
         .COMPENSATION         ("BUF_IN"),  // Not "ZHOLD"
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (5),
-        .CLKFBOUT_MULT        (40),
+        .CLKFBOUT_MULT        (38),
         .CLKFBOUT_PHASE       (0.000),
         .CLKOUT0_DIVIDE       (10),
         .CLKOUT0_PHASE        (0.000),
@@ -76,7 +76,9 @@ module z1top #(
         .in(BUTTONS),
         .out({clean_buttons, reset_button})
     );
-
+    
+    wire cpu_tx, cpu_rx;
+    
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)
@@ -86,7 +88,16 @@ module z1top #(
         .buttons({clean_buttons, reset_button}),
         .switches(SWITCHES),
         .leds(LEDS),
-        .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
-        .FPGA_SERIAL_TX(FPGA_SERIAL_TX)
+        .FPGA_SERIAL_RX(cpu_rx),
+        .FPGA_SERIAL_TX(cpu_tx)
     );
+
+    (* IOB = "true" *) reg fpga_serial_tx_iob;
+    (* IOB = "true" *) reg fpga_serial_rx_iob;
+    assign FPGA_SERIAL_TX = fpga_serial_tx_iob;
+    assign cpu_rx = fpga_serial_rx_iob;
+    always @ (posedge cpu_clk_g) begin
+        fpga_serial_tx_iob <= cpu_tx;
+        fpga_serial_rx_iob <= FPGA_SERIAL_RX;
+    end
 endmodule
