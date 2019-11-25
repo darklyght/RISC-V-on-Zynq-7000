@@ -20,6 +20,7 @@ all: $(TESTS_HEX)
 	$(RISCV)-objdump -D -Mnumeric $(basename $(notdir $^)).elf > $(basename $@).dump
 	$(RISCV)-objcopy $(basename $@).elf -O binary $(basename $@).bin
 	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).hex
+	sed -i '1i @0' $(basename $@).hex
 
 clean:
 	rm -f *.elf *.bin *.hex *.dump

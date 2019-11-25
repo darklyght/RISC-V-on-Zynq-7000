@@ -14,3 +14,4 @@
 *.daidir
 csrc
 ucli.key
+*.wav
