@@ -49,8 +49,9 @@ module echo_integration_testbench ();
     );
 
     reg done = 0;
+    reg [31:0] cycle = 0;
     initial begin
-        $readmemh("../../software/echo/echo.hex", top.cpu.bios_mem.mem);
+        $readmemh("../../software/echo/echo.hex", top.cpu.bios_mem.mem, 0, 4095);
 
         `ifndef IVERILOG
             $vcdpluson;
@@ -101,7 +102,10 @@ module echo_integration_testbench ();
                 done = 1;
             end
             begin
-                repeat (100000) @(posedge sys_clk);
+                for (cycle = 0; cycle < 100000; cycle = cycle + 1) begin
+                    if (done) $finish();
+                    @(posedge sys_clk);
+                end
                 if (!done) begin
                     $display("Failed: timing out");
                     $finish();

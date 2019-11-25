@@ -26,10 +26,16 @@ module isa_testbench();
     string hex_file;
     string test_name;
     initial begin
-        $value$plusargs("hex_file=%s", hex_file);
-        $value$plusargs("test_name=%s", test_name);
-        $readmemh(hex_file, CPU.dmem.mem);
-        $readmemh(hex_file, CPU.imem.mem);
+        if (!$value$plusargs("hex_file=%s", hex_file)) begin
+            $display("Must supply +hex_file=path/to/.hex");
+            $finish();
+        end
+        if (!$value$plusargs("test_name=%s", test_name)) begin
+            $display("Must supply +test_name=add");
+            $finish();
+        end
+        $readmemh(hex_file, CPU.dmem.mem, 0, 16384-1);
+        $readmemh(hex_file, CPU.imem.mem, 0, 16384-1);
 
         `ifndef IVERILOG
             $vcdpluson;
