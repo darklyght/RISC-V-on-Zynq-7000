@@ -52,12 +52,12 @@ int main(void) {
                 decode_and_print_button(button_state);
             }
         } else if (strcmp(input, "read_switches") == 0) {
-            uint32_t dip_switch_state = DIP_SWITCHES;
-            uwrite_int8s("\tDIP switches set to ");
-            uwrite_int8s(uint32_to_ascii_hex(dip_switch_state, buffer, BUFFER_LEN));
+            uint32_t switch_state = SWITCHES;
+            uwrite_int8s("\tSwitches set to ");
+            uwrite_int8s(uint32_to_ascii_hex(switch_state, buffer, BUFFER_LEN));
             uwrite_int8s("\r\n");
         } else if (strcmp(input, "led") == 0) {
-            uint32_t led_control = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));	
+            uint32_t led_control = ascii_hex_to_uint32(read_token(buffer, BUFFER_LEN, " \x0d"));
             LED_CONTROL = led_control;
         } else if (strcmp(input, "exit") == 0) {
             uint32_t bios = ascii_hex_to_uint32("40000000");

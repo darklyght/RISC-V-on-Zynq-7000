@@ -207,18 +207,18 @@ For the specific details of each instruction, refer to sections 2.2 through 2.6 
 You will have to implement 2 CSR instructions to support running the standard RISC-V ISA test suite.
 A CSR (or control status register) is some state that is stored independent of the register file and the memory.
 While there are $2^{12}$ possible CSR addresses, you will only use one of them (\texttt{tohost = 0x51E}).
-The \texttt{tohost} register is monitored by the RISC-V ISA testbench, and simulation ends when a value is written to this register.
-A value of 1 indicates success, a value greater than 1 gives clues as to the location of the failure.
+The \texttt{tohost} register is monitored by the RISC-V ISA testbench (\verb|isa_testbench.v|), and simulation ends when a non-zero value is written to this register.
+A CSR value of 1 indicates success, and a value greater than 1 indicates which test failed.
 
 There are 2 CSR related instructions that you will need to implement:
 \begin{enumerate}
-\item \texttt{csrw tohost,t2}  (short for \texttt{csrrw x0,csr,rs1} where \texttt{csr = 0x51E})
-\item \texttt{csrwi tohost,1}  (short for \texttt{csrrwi x0,csr,uimm} where \texttt{csr = 0x51E})
+  \item \texttt{csrw tohost,x2}  (short for \texttt{csrrw x0,csr,rs1} where \texttt{csr = 0x51E})
+  \item \texttt{csrwi tohost,1}  (short for \texttt{csrrwi x0,csr,uimm} where \texttt{csr = 0x51E})
 \end{enumerate}
 
-\texttt{csrw} will write the value from register in rs1.
-\texttt{csrwi} will write the immediate (stored in rs1) to the addressed csr.
-Note that you do not need to write to rd (writing to x0 does nothing).
+\texttt{csrw} will write the value from \texttt{rs1} into the addressed CSR.
+\texttt{csrwi} will write the immediate (stored in the rs1 field in the instruction) into the addressed CSR.
+Note that you do not need to write to \texttt{rd} (writing to x0 does nothing), since the CSR instructions are only used in simulation.
 
 \input{isa.tex}
 
@@ -687,10 +687,10 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
 
 \section{Checkpoint 3 - I/O Integration, PWM Controller, Subtractive Synthesizer}
 In checkpoint 3 of this project you will implement a memory mapped I/O interface to user inputs and outputs (buttons, LEDs, and switches).
-To buffer user inputs to your processor you will integrate the FIFO built in lab.
+To buffer user inputs to your processor you will integrate the FIFO you built in lab.
 
-You will design a generic PWM controller to drive the audio output that can be configured over MMIO.
-Finally, you will implement a simple polyphonic subtractive synthesizer with amplitude (ADSR) envelopes.
+You will design a generic PWM controller that will function as a digital-to-analog converter (DAC) that drives the audio output jack.
+Finally, you will implement a simple polyphonic subtractive synthesizer with a numerically controlled oscillator, a digital filter, and an amplitude envelope.
 
 \subsection{I/O Integration}
 In lab, you built a synchronizer, debouncer and an edge detector that were used to take in various user inputs.
@@ -740,7 +740,7 @@ Modify \verb|z1top.v| and \verb|Riscv151.v| by instantiating your FIFO, hooking 
 
 \subsubsection{User I/O Test Program}
 The \verb|software/user_io_test| tests the FIFO and user I/O integration.
-After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|hex_to_serial user_io_test.hex 30006000|.
+After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|hex_to_serial user_io_test.hex 30000000|.
 Then \verb|screen| and \verb|jal 10006000| from the BIOS to jump into the user I/O test program.
 
 This program has several commands to help you debug and verify functionality:
@@ -751,84 +751,157 @@ This program has several commands to help you debug and verify functionality:
   \item \verb|exit| - Jump back into BIOS.
 \end{itemize}
 
-\subsection{PWM Controller}
-\subsubsection{Testing the PWM Controller}
-\textbf{Fall 19 Note: This section will be updated}
+\subsection{PWM DAC}
+In lab we built a \verb|tone_generator| that took in a frequency and produced a square wave that drove the audio jack.
+Now, we want to produce arbitrary waveforms so we can produce different types of sound.
 
-We have provided a program to test your tone generator and its memory map.
-It can be found in \verb|software/tone_gen_test/|.
-Compile and run the program just as you did for the \verb|user_io_test|.
-\verb|jal| to the program from the BIOS, and you can play with these commands:
+To do this, we will design a PWM controller to function like a Digital-Analog-Converter (DAC).
+Rather than feeding the \verb|tone_generator| a ``tone switch" period that describes a specific audio frequency, we will feed in a 12 bit number to a PWM controller that determines the duty cycle of the PWM output signal.
+The 12 bit input to the PWM controller will determine the duty cycle according to the following equation:
 
-\begin{itemize}
-  \item \verb|on| - Flips the output enable register high
-  \item \verb|off| - Flips low the output enable register low
-  \item \verb|tone <tone_switch_period>| - Writes the user specified \verb|tone_switch_period| (32-bits in hex) to the tone switch period address
-  \item \verb|exit| - Jumps back to the BIOS
-\end{itemize}
+\begin{equation*}
+  \text{Duty Cycle} = \frac{\text{Input[11:0]}}{2^{12} - 1}
+\end{equation*}
 
-Calculate the \verb|tone_switch_period| for a 440Hz tone with a 50 MHz clock and try sending the command for that through the test program. Verify that the piezo speaker is buzzing at 440Hz by comparing it to a square wave at the same frequency via a \href{http://onlinetonegenerator.com/}{tone generator}.
-
-\subsubsection{Piano Program}
-
-\subsubsection{Music Streamer in Software}
-Now that we have access to user I/Os and access to the tone generator, we can fully implement the music streamer and sequencer FSM from lab 4 entirely in software!
-
-The music streamer program can be found in \verb|software/music_streamer|. To use this program, use the same scripts from Lab 3 to generate a music data file from a MusicXML file, and then convert that data file to a static array declaration that can be used in a C program.
-
-\begin{minted}[frame=single]{bash}
-python scripts/musicxml_parser.py musicxml/Row_Row_Row_Your_Boat.mxl music.txt
-\end{minted}
-
-You will now have a \verb|music.txt| file in the \verb|/software/music_streamer| directory with the music data. Now we use the \verb|c_array_generator.py| script to create a static array declaration using this file.
-
-\begin{minted}[frame=single]{bash}
-python scripts/c_array_generator.py music.h music.txt
-\end{minted}
-
-Now, we have a file called \verb|music.h| that has a static array declaration filled with the music data. This serves exactly the same purpose as the ROM that was generated in Lab 3.
-
-To build the \verb|music_streamer| program and place it on your processor, execute:
-\begin{minted}[frame=single]{bash}
-make
-hex_to_serial music_streamer.hex 3000a000
-screen $SERIALTTY 115200
-151> jal 1000a000
-\end{minted}
-
-The \verb|music_streamer| functions exactly like it does in Lab 3, but the state machine that was implemented directly in hardware, is now implemented in software. Here is the state machine diagram for reference:
-
+The Pynq board has a low pass filter attached to the output of \verb|aud_pwm| that will smooth the PWM waveform to an analog voltage:
 \begin{center}
-  \begin{tikzpicture}[shorten >=1pt, node distance=10cm,on grid, auto, semithick]
-  \tikzstyle{state} = [draw, very thick, fill=white, rectangle, minimum height=3em, minimum width=7em, node distance=12em, font={\sffamily\bfseries}]
-  \tikzstyle{stateEdgePortion} = [black,thick];
-  \tikzstyle{stateEdge} = [stateEdgePortion,->];
-  \tikzstyle{edgeLabel} = [pos=0.5, text centered, font={\sffamily\small}];
-
-  \node[state,initial](rp) {REGULAR\_PLAY};
-  \node[state](revp) [below =of rp]{REVERSE\_PLAY};
-  \node[state](p) [right=of rp]{PAUSED};
-  \node[state](playseq) [above=of rp]{PLAY\_SEQ};
-  \node[state](editseq) [left=of rp]{EDIT\_SEQ};
-
-  \path[->]
-  (playseq) edge node [swap] {play\_pause} (p)
-  edge node [swap] {switch\_mode} (editseq)
-  edge node {} (rp)
-  (editseq) edge node {} (playseq)
-  (rp) edge node {play\_pause} (p)
-  edge [swap] node {switch\_mode} (revp)
-  edge node {switch\_fn} (playseq)
-  (p) edge node {} (rp)
-  edge [bend right, swap] node {switch\_fn} (playseq)
-  (revp) edge [swap] node {play\_pause} (p)
-  edge [swap] node {} (rp);
-  \end{tikzpicture}
+  \includegraphics[width=0.65\textwidth]{images/pynq-z1-audio-pwm.png}
 \end{center}
 
-The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.
+Note that there's no more notion of volume in this block (that will be handled in software).
+We just want this block to act as a DAC.
+
+\subsubsection{RISC-V Core Connection}
+You'll have to memory map the input of this PWM block, but there's a catch.
+In order to actually use this block as a proper DAC (especially for the next part), it will need to run very fast (much faster than your processor).
+This implies that your PWM block will be running inside a different clock domain.
+
+We dealt with clock domain crossings before (our synchronizer took an asynchronous signal and brought it into a synchronous domain).
+However the single-bit synchronizer only works with 1-bit signals and not a 12-bit bus like the duty cycle input.
+We will implement a 4 phase handshake to make sure we reliably pass data from the RISC-V core's clock domain to the PWM block's clock domain.
+
+A timing diagram is shown below:
+\begin{center}
+\includegraphics[width=\textwidth]{images/ss_r_ack.png}
+\end{center}
+
+A generic four phase handshake requires the generation of two new synchronous signals, request and acknowledge, and the comparison of 4 edges.
+\begin{enumerate}
+    \item Request is asserted at the same time that the data is registered in the TX domain
+    \item Acknowledge is asserted from the RX domain after the data has been captured in the RX domain (this could require holding the data for two clock cycles to ensure data coherency)
+    \item Request is de-asserted in the TX domain
+    \item Acknowledge is de-asserted in the RX domain
+\end{enumerate}
+
+Implement this with 2-flop synchronizers that synchronize the request and acknowledge signals between the clock domains.
+A block diagram is shown below:
+
+\begin{center}
+\includegraphics[width=\textwidth/2]{images/fourPhase_1.png}
+\end{center}
+
+The numbers highlight the flow of data through the synchronizer circuit.
+Here is a detailed sequence of steps to send data from the TX domain to the RX domain:
+\begin{enumerate}
+    \item First, the RISC-V core stores the duty cycle to the TX data register and then sets the TX request register high
+    \item The TX request bit is synchronized into the RX domain
+    \item Once the RX request bit is high, the RX data register takes in the value from the TX data register (knowing that the TX data register has been stable for 2 cycles)
+    \item The RX request bit is synchronized back to the TX domain as an acknowledge bit
+    \item This concludes a data transfer. To prepare for the next transfer, the TX request bit is de-asserted
+    \item This will cause the TX acknowledge bit to be de-asserted
+    \item The transmitting side is ready for a new data transfer
+\end{enumerate}
+
+While this is slower than simply passing data through clock domains, it transmits data reliably.
+For this first part, your RISC-V core will handle all of the requests and acknowledges in software through a memory mapped interface detailed below.
+
+\begin{table}[hbt]
+  \begin{center}
+    \caption{Memory Map for I/O Integration}
+    \label{mem_map2}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
+      \midrule
+      \verb|32'h80000034| & Duty Cycle & Write & \verb|{20'b0, duty_cycle[11:0]}| \\
+      \verb|32'h80000038| & TX Request & Write & \verb|{31'b0, tx_req}| \\
+      \midrule
+      \verb|32'h80000040| & TX Acknowledge & Read & \verb|{31'b0, tx_ack}| \\
+      \midrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsubsection{Implementation}
+You can create the PWM controller in its own file.
+You should modify \verb|z1top.v| to wire the PWM controller's output to \verb|aud_pwm|.
+
+\textit{Note: clarify PLL clocking connections, clarify IOB register packing, testing}
+
+\subsubsection{Piano Program}
+\textit{Note: coming}
 
 \subsection{Subtractive Synth}
+While the piano program works, it can only play a single note at a time (monophonic synthesis).
+More importantly, it's limited to the CPI of the processor and this in turn limits the waveforms we can send to our DAC.
+
+How could we improve our synthesizer's throughput and implement a polyphonic synthesizer?
+Hardware acceleration!
+We can implement most of the subtractive synthesis blocks in hardware and lay the groundwork for building a rich sounding synthesizer.
+The main datapath that we'll be implementing is shown below:
+
+%% MMIO drafting
+
+% For the synth as a whole
+%% Sine NCO gain (sine, square, saw, triangle, noise)
+%% Square NCO gain
+%% Triangle NCO gain
+%% Saw NCO gain
+%% SVF F coeff
+%% SVF Q coeff
+%% Envelope attack time
+%% Envelope sustain level
+%% Envelope release time
+
+% For each voice
+%% Hard reset
+%% Note start + note pitch
+%% Note release
+%% Done with playing note
+
+\begin{center}
+  \includegraphics[width=\textwidth]{images/ss_dp_1.png}
+\end{center}
+
+This datapath can then be connected to our processor as shown below:
+
+\begin{center}
+  \includegraphics[width=\textwidth/2]{images/fourPhase_2.png}
+\end{center}
+
+There are three major blocks that you'll be implementing: a numerically controlled oscillator (NCO), a state variable filter (SVF) and an amplitude modulating block (ADSR - attack decay sustain and release). The datapath will take in a "note" from the RISC core, select/sum the appropriate waveforms, filter the waveforms through the SVF, apply an ADSR envelope and continuously feed samples to the DAC until the signal releases (as set by the ADSR timing). Each block has parameters that configure the synthesizer to sound a certain way for a certain instrument. The collection of parameters for a single instrument is referred to as a patch. While we could stop here, we want to be able to play multiple notes from multiple instruments at the same time and have them harmonize (polyphony). How can we go about this? It's ideally as simple as duplicating our datapath and summing the output of the ADSR blocks as shown in the figure below.
+
+    \begin{center}
+    \includegraphics[width=\textwidth]{images/ss_dp_2.png}
+    \end{center}
+
+\subsection{Block Descriptions}
+At this point, you all should be verilog masters so we'll leave most of the design decisions up to you. To help get you started, here are some block descriptions:
+\begin{enumerate}
+    \item The NCO can be modeled as an overflowing counter and can address multiple look up tables that describe different waveforms. For example, you can have a look up table that describes a sine wave shape and then use the frequency of your overflowing counter to determine what the frequency of the output sine wave should be. If you want to generate complex waveforms, you can take the output from multiple different look up tables (like a sine wave and a saw-tooth) and sum them! \\
+    \newline
+    In scripts/waveform.py, a script that generates 440Hz sine, square and sawtooth waveforms for one cycle has been provided for you. You can run this through scripts/rom$\_$generator.py to generate the LUT.
+    The format of the waveform will be fixed point binary. For more details on this, keep reading.
+
+    \item The SVF is an infinite impulse response (IIR) filter with multiple outputs (as shown below). You will need to define this block diagram in verilog and then put the outputs into a mux that the parameters block will control. It's important to note that $Y_h$ is a high pass filtered output, $Y_b$ is the bandpass filtered output, $Y_n$ is the notch filtered output, and lastly $Y_l$ is the low pass filtered output. For further information (such as how to pick the different values for different corner frequencies) you can refer to this reference: \href{https://karmafx.net/dochttps://www.overleaf.com/project/5dcf205cde307800019d9e74s/karmafx_digitalfilters.pdf}{SVF reference}
+        \begin{center}
+        \includegraphics[width=\textwidth/2]{images/svf.png}
+        \end{center}
+
+    In scripts/synthesizer.py, a software implementation of the synthesizer has been provided for you. It is important to keep in mind that digital implementation of IIR filters is non-trivial. If not done carefully, you may exceed the available number of bits and encounter overflow problems. In addition, multiplications must be performed by values less than one to make sure the system is bounded. Therefore, in the model provided for you, we implement "fixed point operation", where fractions are represented by binary numbers. For instance, 0.5 is "1", and 0.625 is "101" ($0.5 \times 1 + 0.25 \times 0 + 0.125 \times 1$). Because we do not have values larger than 1, we do not need to separate integer from fraction (unless you decide to set Q to be larger than 1,in which case you will have to handle this). Performing multiplication of fixed point numbers should be the same as performing regular multiplication. However, the sign of the number (MSB) should be taken out and computed separately. In total, you have 24 bits to spare in the SVF registers, Therefore, budget your resolution wisely to not encounter overflow problems. You may change the values of F to change the corner frequency of your filter. The filter should be able to adapt to different corner frequencies at run time.
+
+    \item The ADSR block can be simplified to an "ASR" block. Meaning, you just have an "attack, sustain, and release" process. This block will take the output of the SVF and modulate the amplitude such that the resulting sound will get louder, hold, and get quiet after every key press. This is done by multiplying the waveform out of the SVF filter with scalars. The ADSR should receive a "press" and a "release" signal from the CPU. You can choose the time it takes for attack to go from silent to the largest amplitude. Then the output would sustain its largest level until a "release" signal is received, and after that the sound start decaying to silence again. The python model provided for you generates a reference behavior of the ADSR envelop. You may choose the envelop to mimic any instrument you would like to.
+\end{enumerate}
 
 \subsection{Checkpoint 3 Deliverables Summary}
 \begin{center}
@@ -1202,3 +1275,61 @@ features, you can either add to the code in the \verb|bios151v3.c| file or creat
 header files. Note that you do not have access to standard c libraries so you will have to add
 them yourself if you need additional library functionality.
 \end{document}
+
+% ARCHIVE
+%\subsubsection{Music Streamer in Software}
+%Now that we have access to user I/Os and access to the tone generator, we can fully implement the music streamer and sequencer FSM from lab 4 entirely in software!
+%
+%The music streamer program can be found in \verb|software/music_streamer|. To use this program, use the same scripts from Lab 3 to generate a music data file from a MusicXML file, and then convert that data file to a static array declaration that can be used in a C program.
+%
+%\begin{minted}[frame=single]{bash}
+%python scripts/musicxml_parser.py musicxml/Row_Row_Row_Your_Boat.mxl music.txt
+%\end{minted}
+%
+%You will now have a \verb|music.txt| file in the \verb|/software/music_streamer| directory with the music data. Now we use the \verb|c_array_generator.py| script to create a static array declaration using this file.
+%
+%\begin{minted}[frame=single]{bash}
+%python scripts/c_array_generator.py music.h music.txt
+%\end{minted}
+%
+%Now, we have a file called \verb|music.h| that has a static array declaration filled with the music data. This serves exactly the same purpose as the ROM that was generated in Lab 3.
+%
+%To build the \verb|music_streamer| program and place it on your processor, execute:
+%\begin{minted}[frame=single]{bash}
+%make
+%hex_to_serial music_streamer.hex 3000a000
+%screen $SERIALTTY 115200
+%151> jal 1000a000
+%\end{minted}
+%
+%The \verb|music_streamer| functions exactly like it does in Lab 3, but the state machine that was implemented directly in hardware, is now implemented in software. Here is the state machine diagram for reference:
+%
+%\begin{center}
+%  \begin{tikzpicture}[shorten >=1pt, node distance=10cm,on grid, auto, semithick]
+%  \tikzstyle{state} = [draw, very thick, fill=white, rectangle, minimum height=3em, minimum width=7em, node distance=12em, font={\sffamily\bfseries}]
+%  \tikzstyle{stateEdgePortion} = [black,thick];
+%  \tikzstyle{stateEdge} = [stateEdgePortion,->];
+%  \tikzstyle{edgeLabel} = [pos=0.5, text centered, font={\sffamily\small}];
+%
+%  \node[state,initial](rp) {REGULAR\_PLAY};
+%  \node[state](revp) [below =of rp]{REVERSE\_PLAY};
+%  \node[state](p) [right=of rp]{PAUSED};
+%  \node[state](playseq) [above=of rp]{PLAY\_SEQ};
+%  \node[state](editseq) [left=of rp]{EDIT\_SEQ};
+%
+%  \path[->]
+%  (playseq) edge node [swap] {play\_pause} (p)
+%  edge node [swap] {switch\_mode} (editseq)
+%  edge node {} (rp)
+%  (editseq) edge node {} (playseq)
+%  (rp) edge node {play\_pause} (p)
+%  edge [swap] node {switch\_mode} (revp)
+%  edge node {switch\_fn} (playseq)
+%  (p) edge node {} (rp)
+%  edge [bend right, swap] node {switch\_fn} (playseq)
+%  (revp) edge [swap] node {play\_pause} (p)
+%  edge [swap] node {} (rp);
+%  \end{tikzpicture}
+%\end{center}
+%
+%The program will print out information as you transition the state machine, edit notes in the sequencer, and modify the tempo.

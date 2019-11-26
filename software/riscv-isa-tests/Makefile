@@ -1,7 +1,7 @@
 SHELL := $(shell which bash) -o pipefail
 TESTS := $(notdir $(shell find riscv-tests/isa/rv32ui -type f -name "*.S"))
 TESTS_HEX := $(subst .S,.hex,$(TESTS))
-GCC_OPTS := -march=rv32i -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T env_151/link.ld
+GCC_OPTS := -march=rv32i -mabi=ilp32 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -T env_151/link.ld -Wl,--build-id=none
 
 RISCV_PACKAGE := riscv64-linux-gnu
 RISCV_DEFAULT := riscv64-unknown-elf
@@ -20,6 +20,7 @@ all: $(TESTS_HEX)
 	$(RISCV)-objdump -D -Mnumeric $(basename $(notdir $^)).elf > $(basename $@).dump
 	$(RISCV)-objcopy $(basename $@).elf -O binary $(basename $@).bin
 	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).hex
+	sed -i '1i @0' $(basename $@).hex
 
 clean:
 	rm -f *.elf *.bin *.hex *.dump

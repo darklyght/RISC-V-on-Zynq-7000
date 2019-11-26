@@ -22,6 +22,8 @@ if len(sys.argv) != 3:
 addr = int(sys.argv[2], 16);
 with open(sys.argv[1], "r") as f:
     program = f.readlines()
+if ('@' in program[0]):
+    program = program[1:] # remove first line '@0'
 program = [inst.rstrip() for inst in program]
 size = len(program)*4 # in bytes
 

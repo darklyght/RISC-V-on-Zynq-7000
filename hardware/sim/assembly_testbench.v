@@ -43,7 +43,7 @@ module assembly_testbench();
 
     reg done = 0;
     initial begin
-        $readmemh("../../software/assembly_tests/assembly_tests.hex", CPU.bios_mem.mem);
+        $readmemh("../../software/assembly_tests/assembly_tests.hex", CPU.bios_mem.mem, 0, 4095);
 
         `ifndef IVERILOG
             $vcdpluson;

@@ -76,9 +76,7 @@ module z1top #(
         .in(BUTTONS),
         .out({clean_buttons, reset_button})
     );
-    
     wire cpu_tx, cpu_rx;
-    
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)
@@ -97,7 +95,7 @@ module z1top #(
     (* IOB = "true" *) reg fpga_serial_rx_iob;
     assign FPGA_SERIAL_TX = fpga_serial_tx_iob;
     assign cpu_rx = fpga_serial_rx_iob;
-    always @ (posedge cpu_clk_g) begin
+    always @(posedge cpu_clk_g) begin
         fpga_serial_tx_iob <= cpu_tx;
         fpga_serial_rx_iob <= FPGA_SERIAL_RX;
     end

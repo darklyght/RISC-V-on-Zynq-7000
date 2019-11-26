@@ -11,7 +11,7 @@ VCS_OPTS                := -notice -PP -line +lint=all,noVCDE +v2k -timescale=1n
 SIM_RTL                 += $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim -type f -name "*.v"))
 SIM_MODELS              := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/sim_models -type f -name "*.v"))
 IVERILOG                := iverilog
-IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core
+IVERILOG_OPTS           := -Ttyp -D IVERILOG=1 -D ABS_TOP=$(ABS_TOP) -I $(ABS_TOP)/src/riscv_core -g2012
 VVP                     := vvp
 ISA_TESTS               := $(subst /cygdrive/c/,C:/,$(shell find $(ABS_TOP)/../software/riscv-isa-tests -type f -name "*.hex"))
 ISA_TESTS_FILES         := $(notdir $(ISA_TESTS))
@@ -33,7 +33,7 @@ sim/%.fst: sim/%.tbi
 # ISA Tests
 sim/isa/isa_testbench.tbi: sim/isa_testbench.v $(RTL) $(SIM_MODELS)
 	mkdir -p sim/isa
-	cd sim/isa && $(IVERILOG) $(IVERILOG_OPTS) -g2012 -o isa_testbench.tbi ../isa_testbench.v $(RTL) $(SIM_MODELS)
+	cd sim/isa && $(IVERILOG) $(IVERILOG_OPTS) -o isa_testbench.tbi ../isa_testbench.v $(RTL) $(SIM_MODELS)
 
 sim/isa/%.fst: sim/isa/isa_testbench.tbi $(ABS_TOP)/../software/riscv-isa-tests/%.hex
 	cd sim/isa && $(VVP) isa_testbench.tbi -fst +hex_file=$(word 2,$^) +test_name=$(basename $(notdir $(word 2,$^))) |& tee $(basename $(notdir $(word 2,$^))).log
