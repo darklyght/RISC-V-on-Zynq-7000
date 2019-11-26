@@ -4,9 +4,10 @@ module Riscv151 #(
 )(
     input clk,
     input rst,
-    input [3:0] buttons,
+    input [2:0] buttons,
     input [1:0] switches,
     output [5:0] leds,
+    output pwm,
     input FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );
@@ -163,6 +164,8 @@ module Riscv151 #(
     wire dmem_wsel_uart_we;
     wire dmem_wsel_counter_reset;
     wire dmem_wsel_leds_we;
+    wire dmem_wsel_pwm_we;
+    wire dmem_wsel_pwm_tone_we;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
@@ -199,7 +202,7 @@ module Riscv151 #(
     wire [31:0] dmem_rsel_counter_cycle;
     wire [31:0] dmem_rsel_counter_inst;
     wire dmem_rsel_buttons_empty;
-    wire [3:0] dmem_rsel_buttons;
+    wire [2:0] dmem_rsel_buttons;
     wire [1:0] dmem_rsel_switches;
     
     wire [31:0] load_extend_din;
@@ -254,21 +257,32 @@ module Riscv151 #(
     wire [31:0] counter_inst_count;
     
     wire buttons_fifo_wr_en;
-    wire [3:0] buttons_fifo_din;
+    wire [2:0] buttons_fifo_din;
     wire buttons_fifo_full;
     wire buttons_fifo_rd_en;
-    wire [3:0] buttons_fifo_dout;
+    wire [2:0] buttons_fifo_dout;
     wire buttons_fifo_empty;
     
-    wire [3:0] buttons_buttons;
+    wire [2:0] buttons_buttons;
     wire buttons_wr_en;
-    wire [3:0] buttons_din;
+    wire [2:0] buttons_din;
     wire buttons_full;
     
     wire leds_we;
     wire [5:0] leds_leds_in;
     wire [5:0] leds_leds_out;
-    
+
+    wire pwm_we;
+    wire pwm_tone_we;
+    wire [31:0] pwm_wdata;
+    wire pwm_tone_enable;
+    wire [23:0] pwm_tone_input;
+
+    wire tone_generator_output_enable;
+    wire [23:0] tone_generator_tone_switch_period;
+    wire tone_generator_volume;
+    wire tone_generator_square_wave_out;    
+
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
         .alu(pc_sel_alu), // From alu
@@ -462,7 +476,9 @@ module Riscv151 #(
         .imem_wea(dmem_wsel_imem_wea), // To imem
         .uart_we(dmem_wsel_uart_we), // To trmt_fifo
         .counter_reset(dmem_wsel_counter_reset), // To counter
-        .leds_we(dmem_wsel_leds_we) // To leds
+        .leds_we(dmem_wsel_leds_we), // To leds
+        .pwm_we(dmem_wsel_pwm_we), // To pwm
+        .pwm_tone_we(dmem_wsel_pwm_tone_we) // To pwm
     );
     
     assign dmem_wsel_addr = alu_alu_out;
@@ -661,7 +677,7 @@ module Riscv151 #(
     assign counter_writeback_valid = control_counter_inst_valid;
     
     fifo #(
-        .data_width(4),
+        .data_width(3),
         .fifo_depth(fifo_depth)
     ) buttons_fifo (
         .clk(clk),
@@ -694,12 +710,40 @@ module Riscv151 #(
         .clk(clk),
         .rst(rst),
         .we(leds_we), // From dmem_wsel
-        .leds_in(leds_leds_in), // From execute_forward
+        .leds_in(leds_leds_in), // From dmem_wsel
         .leds_out(leds_leds_out) // To external
     );
     
     assign leds_we = dmem_wsel_leds_we;
-    assign leds_leds_in = execute_forward_rs2_data[5:0];
+    assign leds_leds_in = dmem_wsel_data[5:0];
     assign leds = leds_leds_out;
+
+    pwm audio_pwm (
+        .clk(clk),
+        .rst(rst),
+        .we(pwm_we), // From dmem_wsel
+        .tone_we(pwm_tone_we), // From dmem_wsel
+        .wdata(pwm_wdata), // From dmem_wsel
+        .tone_enable(pwm_tone_enable), // To tone_generator
+        .tone_input(pwm_tone_input) // To tone_generator
+    );
+
+    assign pwm_we = dmem_wsel_pwm_we;
+    assign pwm_tone_we = dmem_wsel_pwm_tone_we;
+    assign pwm_wdata = dmem_wsel_data;
+
+    tone_generator tone_generator (
+        .clk(clk),
+        .rst(rst),
+        .output_enable(tone_generator_output_enable), // From pwm
+        .tone_switch_period(tone_generator_tone_switch_period), // From pwm
+        .volume(tone_generator_volume), // Set to '1'
+        .square_wave_out(tone_generator_square_wave_out) // To external
+    );
+
+    assign tone_generator_output_enable = pwm_tone_enable;
+    assign tone_generator_tone_switch_period = pwm_tone_input;
+    assign tone_generator_volume = 1'b1;
+    assign pwm = tone_generator_square_wave_out;
     
 endmodule

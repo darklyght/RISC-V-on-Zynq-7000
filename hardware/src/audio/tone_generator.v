@@ -1,4 +1,3 @@
-`timescale 1ns/1ns
 module tone_generator (
     input clk,
     input rst,
@@ -9,7 +8,7 @@ module tone_generator (
 );
     reg square_wave_reg = 1'b0;
     reg [1:0] volume_reg = 2'b0;
-    reg [22:0] count_reg = 23'b0;
+    reg [23:0] count_reg = 24'b0;
     
     wire duty_cycle;
     
@@ -17,21 +16,21 @@ module tone_generator (
         if (rst == 1'b1) begin
             square_wave_reg <= 1'b0;
             volume_reg <= 2'b0;
-            count_reg <= 23'b0;
+            count_reg <= 24'b0;
         // Controls period
         end else if (output_enable == 1'b1) begin
             if (tone_switch_period == 0) begin
                 square_wave_reg <= 1'b0;
-                count_reg <= 23'b0;
+                count_reg <= 24'b0;
             end else if (count_reg >= tone_switch_period >> 1) begin
                 square_wave_reg <= ~square_wave_reg;
-                count_reg <= 23'b0;
+                count_reg <= 24'b0;
             end else begin
                 count_reg <= count_reg + 1;
             end
         end else begin
             square_wave_reg <= 1'b0;
-            count_reg <= 23'b0;
+            count_reg <= 24'b0;
         end
         
         // Controls volume

@@ -9,7 +9,7 @@ module dmem_rsel (
     input [31:0] counter_cycle,
     input [31:0] counter_inst,
     input buttons_empty,
-    input [3:0] buttons,
+    input [2:0] buttons,
     input [1:0] switches
 );
 
@@ -22,7 +22,7 @@ module dmem_rsel (
                     2'b00:
                         dout = addr[2] ? {24'b0, recv_data} : {30'b0, ~recv_empty, ~trmt_full};
                     2'b10:
-                        dout = addr[3] ? {30'b0, switches} : addr[2] ? {28'b0, buttons} : {31'b0, buttons_empty};
+                        dout = addr[3] ? {30'b0, switches} : addr[2] ? {29'b0, buttons} : {31'b0, buttons_empty};
                     default:
                         dout = addr[2] ? counter_inst : counter_cycle;
                 endcase
