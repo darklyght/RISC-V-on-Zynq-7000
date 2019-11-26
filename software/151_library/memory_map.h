@@ -6,7 +6,7 @@
 
 #define GPIO_FIFO_EMPTY (*((volatile uint32_t*)0x80000020) & 0x01)
 #define GPIO_FIFO_DATA (*((volatile uint32_t*)0x80000024))
-#define DIP_SWITCHES (*((volatile uint32_t*)0x80000028) & 0x03)
+#define SWITCHES (*((volatile uint32_t*)0x80000028) & 0x03)
 #define LED_CONTROL (*((volatile uint32_t*)0x80000030))
 
 #define TONE_GEN_OUTPUT_ENABLE (*((volatile uint32_t*)0x80000034))
