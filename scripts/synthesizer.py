@@ -61,6 +61,7 @@ def svf(din, res):
 	# coefficients F and Q
 	F = 2*math.sin(math.pi*fc*time_unit)
 	F = resolution_limit(F, res)
+	print(F)
 	# a typical number of Q is sqrt(2), but it would require more complicated
 	# arithmetic, so we use 1 for simplicity
 	Q = 1

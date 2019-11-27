@@ -111,6 +111,7 @@ module z1top #(
         .out({clean_buttons, reset_button})
     );
     wire cpu_tx, cpu_rx;
+    wire rv_duty_cycle, rv_req, dac_ack;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)
@@ -120,7 +121,9 @@ module z1top #(
         .buttons(clean_buttons),
         .switches(SWITCHES),
         .leds(LEDS),
-        .pwm(aud_pwm),
+        .duty_cycle(rv_duty_cycle),
+        .req(rv_req),
+        .ack(dac_ack),
         .FPGA_SERIAL_RX(cpu_rx),
         .FPGA_SERIAL_TX(cpu_tx)
     );
@@ -143,6 +146,14 @@ module z1top #(
     always @(posedge pwm_clk_g) begin
         pwm_iob <= pwm_out;
     end
-    assign pwm_out = 1'b0;
     assign pwm_rst = reset_button_sync || ~pwm_clk_pll_lock;
+    
+    dac dac (
+        .clk(pwm_clk_g),
+        .rst(pwm_rst),
+        .rv_duty_cycle(rv_duty_cycle),
+        .req(rv_req),
+        .ack(dac_ack),
+        .pwm(pwm_out)
+    );
 endmodule
