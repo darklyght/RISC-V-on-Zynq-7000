@@ -3,7 +3,7 @@ module gray_to_bin #(
     parameter addr_width = $clog2(fifo_depth)
 ) (
     input [addr_width:0] gray,
-    output [addr_width:o] bin
+    output [addr_width:0] bin
 );
 
     genvar i;
