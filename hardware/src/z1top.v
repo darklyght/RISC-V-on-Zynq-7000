@@ -111,7 +111,8 @@ module z1top #(
         .out({clean_buttons, reset_button})
     );
     wire cpu_tx, cpu_rx;
-    wire rv_duty_cycle, rv_req, dac_ack;
+    wire [11:0] rv_duty_cycle;
+    wire rv_req, dac_ack;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)

@@ -1,7 +1,7 @@
 module dac (
     input clk,
     input rst,
-    input rv_duty_cycle,
+    input [11:0] rv_duty_cycle,
     input req,
     output ack,
     output pwm
@@ -28,7 +28,7 @@ module dac (
     assign handshake_rx_din = rv_duty_cycle;
     assign ack = handshake_rx_ack;
     
-    pwm pwm (
+    pwm aud_pwm (
         .clk(clk),
         .rst(rst),
         .duty_cycle(pwm_duty_cycle), // From handshake_rx

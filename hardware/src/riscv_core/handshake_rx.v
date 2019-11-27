@@ -23,6 +23,8 @@ module handshake_rx (
             DONE:
                 if (!req_sync[1])
                     next_state = IDLE;
+            default:
+                next_state = IDLE;
         endcase
     end
     

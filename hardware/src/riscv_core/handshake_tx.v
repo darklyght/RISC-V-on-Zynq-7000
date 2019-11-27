@@ -7,7 +7,7 @@ module handshake_tx (
     input ack,
     output reg [11:0] dout,
     output reg req,
-    output ack_rv,
+    output ack_rv
 );
     
     reg [1:0] ack_sync;
