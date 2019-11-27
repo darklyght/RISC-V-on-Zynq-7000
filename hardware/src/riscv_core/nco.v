@@ -44,7 +44,7 @@ module nco #(
     end
     
     assign sine_p = {1'b0, sine_residue};
-    assign sine_n = 4'b1000 - sine_n;
+    assign sine_n = 4'b1000 - sine_residue;
     
     always @ (posedge clk) begin
         if (rst)
@@ -53,6 +53,6 @@ module nco #(
             sine <= sine_out * sine_n + sine_out_d * sine_p;
     end
     
-    assign wave = sine[15:4];
+    assign wave = sine[14:3];
     
 endmodule

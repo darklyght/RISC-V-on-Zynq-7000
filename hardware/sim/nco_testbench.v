@@ -18,6 +18,18 @@ module nco_testbench ();
     always #5 clk = ~clk;
     
     initial begin
+        `ifndef IVERILOG
+            $vcdpluson;
+        `endif
+        `ifdef IVERILOG
+            $dumpfile("nco_testbench.fst");
+            $dumpvars(0, nco_testbench);
+        `endif
+        
+        $readmemh("../../scripts/sine_lut.hex", dut.sine_lut.mem);
+        $readmemh("../../scripts/sine_lut.hex", dut.sine_lut_d.mem);
+        
+        frequency = 15'd20000;
         rst = 1;
         repeat (5) @(posedge clk);
         rst = 0;

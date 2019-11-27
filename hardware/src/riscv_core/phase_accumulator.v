@@ -16,7 +16,7 @@ module phase_accumulator #(
 
     always @ (posedge clk) begin
         if (rst)
-            counter <= 32'b0;
+            counter <= 48'b0;
         else
             counter <= counter + increment[47:0];
     end
