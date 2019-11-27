@@ -61,7 +61,7 @@ def svf(din, res):
 	# coefficients F and Q
 	F = 2*math.sin(math.pi*fc*time_unit)
 	F = resolution_limit(F, res)
-	print(F)
+	
 	# a typical number of Q is sqrt(2), but it would require more complicated
 	# arithmetic, so we use 1 for simplicity
 	Q = 1
@@ -147,6 +147,14 @@ def synthesizer(melody, attack_release, fc, time_unit, res):
 			waves_out[time] = 0
 
 		time = time + 1
+	print(waves)
+	print(waves_lp)
+	print(waves_hp)
+	print(waves_bp)
+	np.savetxt('waves.txt', waves, fmt='%.9f')
+	np.savetxt('waves_lp.txt', waves_lp, fmt='%.9f')
+	np.savetxt('waves_hp.txt', waves_hp, fmt='%.9f')
+	np.savetxt('waves_bp.txt', waves_bp, fmt='%.9f')
 	return waves, waves_out
 
 
@@ -161,9 +169,9 @@ melody = [100] * 60000 # array of frequencies to be played (100Hz)
 fc = 10000 # corner frequency of filter, play with this yourself
 attack,release = (1000,30000) # onset time of attack and release
 waves, waves_out = synthesizer(melody, (attack,release), fc, time_unit, res)
-plt.plot(waves)
-plt.plot(waves_out)
-plt.show()
+# plt.plot(waves)
+# plt.plot(waves_out)
+# plt.show()
 
 # write to wav file
 output_wav = wave.open('piano_note.wav','w')
