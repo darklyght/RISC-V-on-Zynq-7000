@@ -2,5 +2,5 @@
 .global     _start
 
 _start:
-    li      sp, 0x10006000
+    li      sp, 0x1000fff0
     jal     main

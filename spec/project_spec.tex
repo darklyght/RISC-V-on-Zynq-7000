@@ -741,7 +741,7 @@ Modify \verb|z1top.v| and \verb|Riscv151.v| by instantiating your FIFO, hooking 
 \subsubsection{User I/O Test Program}
 The \verb|software/user_io_test| tests the FIFO and user I/O integration.
 After programming the FPGA, run \verb|make| in the \verb|user_io_test| folder, and run \verb|hex_to_serial user_io_test.hex 30000000|.
-Then \verb|screen| and \verb|jal 10006000| from the BIOS to jump into the user I/O test program.
+Then \verb|screen| and \verb|jal 10000000| from the BIOS to jump into the user I/O test program.
 
 This program has several commands to help you debug and verify functionality:
 \begin{itemize}
@@ -777,27 +777,29 @@ In order to actually use this block as a proper DAC (especially for the next par
 This implies that your PWM block will be running inside a different clock domain.
 
 We dealt with clock domain crossings before (our synchronizer took an asynchronous signal and brought it into a synchronous domain).
-However the single-bit synchronizer only works with 1-bit signals and not a 12-bit bus like the duty cycle input.
-We will implement a 4 phase handshake to make sure we reliably pass data from the RISC-V core's clock domain to the PWM block's clock domain.
+However the single-bit synchronizer only works with 1-bit signals and not a 12-bit bus like the duty cycle input to the PWM controller.
+We will implement a 4 phase handshake to make sure we reliably pass data from the RISC-V core's clock domain (TX/Transmit domain) to the PWM block's clock domain (RX/Receive domain).
 
 A timing diagram is shown below:
 \begin{center}
-\includegraphics[width=\textwidth]{images/ss_r_ack.png}
+  \includegraphics[width=0.8\textwidth]{images/ss_r_ack.png}
 \end{center}
 
-A generic four phase handshake requires the generation of two new synchronous signals, request and acknowledge, and the comparison of 4 edges.
+The four phase handshake uses four signals (\verb|req_tx|, \verb|req_rx|, \verb|ack_rx|, and \verb|ack_tx|).
+\verb|req_rx| is the \verb|req_tx| signal synchronized into the RX domain, and \verb|ack_rx| is the \verb|ack_tx| signal synchronized into the TX domain.
+requires the generation of two new synchronous signals, request and acknowledge, and the comparison of 4 edges.
 \begin{enumerate}
-    \item Request is asserted at the same time that the data is registered in the TX domain
-    \item Acknowledge is asserted from the RX domain after the data has been captured in the RX domain (this could require holding the data for two clock cycles to ensure data coherency)
-    \item Request is de-asserted in the TX domain
-    \item Acknowledge is de-asserted in the RX domain
+  \item Request is asserted at the same time that the data is registered in the TX domain
+  \item Acknowledge is asserted from the RX domain after the data has been captured in the RX domain (this could require holding the data for two clock cycles to ensure data coherency)
+  \item Request is de-asserted in the TX domain
+  \item Acknowledge is de-asserted in the RX domain and is then de-asserted in the TX domain
 \end{enumerate}
 
 Implement this with 2-flop synchronizers that synchronize the request and acknowledge signals between the clock domains.
 A block diagram is shown below:
 
 \begin{center}
-\includegraphics[width=\textwidth/2]{images/fourPhase_1.png}
+  \includegraphics[width=\textwidth/2]{images/fourPhase_1.png}
 \end{center}
 
 The numbers highlight the flow of data through the synchronizer circuit.
@@ -834,12 +836,28 @@ For this first part, your RISC-V core will handle all of the requests and acknow
 
 \subsubsection{Implementation}
 You can create the PWM controller in its own file.
-You should modify \verb|z1top.v| to wire the PWM controller's output to \verb|aud_pwm|.
+You can instantiate the PWM controller where you want.
 
-\textit{Note: clarify PLL clocking connections, clarify IOB register packing, testing}
+Some code has been provided at the bottom \verb|z1top.v| that declares a wire \verb|pwm_out| which should connect to the output of your PWM controller.
+A PLL has been instantiated in \verb|z1top.v| which produces a 150 Mhz clock (\verb|pwm_clk_g|) used for the PWM controller.
+There's also a \verb|pwm_rst| signal that can be used to reset the PWM controller.
+
+You should test the PWM controller using a block-level testbench and the piano software from the next section.
 
 \subsubsection{Piano Program}
-\textit{Note: coming}
+Load the program in \verb|software/square_piano|.
+After running \verb|jal 10000000|, you can use the keyboard rows from `c' to `,' and from `q' to `i' to play piano notes.
+You can hold down shift to generate upper and lower octaves just like in Lab 6.
+
+This program plays square waves for a fixed note length (1/3rd of a second).
+The note length can be adjusted using the buttons:
+\begin{itemize}
+  \item \verb|buttons[1]| = double note length
+  \item \verb|buttons[2]| = halve note length
+  \item \verb|buttons[3]| = reset note length to 1/3rd of a second
+\end{itemize}
+
+% TODO: scale.h generation instructions for different clock frequencies
 
 \subsection{Subtractive Synth}
 While the piano program works, it can only play a single note at a time (monophonic synthesis).
