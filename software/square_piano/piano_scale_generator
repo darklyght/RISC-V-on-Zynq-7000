@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import wave
 import random
 import struct
@@ -5,16 +6,20 @@ import sys
 import math
 
 """
-    This script will generate a text file to be fed into the rom_generator.py script.
-    It will print out the keyboard letter mappings in ASCII to piano notes. The piano notes
-    are stored in terms of tone_switch_periods for a given clock frequency.
+Generate a header file with an array mapping each ASCII character to the tone_switch_period
+of the corresponding piano key.
 """
+if len(sys.argv) < 3:
+    print("Usage: ./piano_scale_generator <output header file> <cpu clock frequency>")
+    print("Example: ./piano_scale_generator scale.h 50e6")
+    sys.exit(1)
 output_file = sys.argv[1]
-# Can supply custom clock frequency, otherwise defaults to 33 Mhz
+clock_freq = float(sys.argv[2])
+# Can supply custom clock frequency, otherwise defaults to 50 Mhz
 if len(sys.argv) > 2:
     clock_freq = float(sys.argv[2])
 else:
-    clock_freq = 33.0e6
+    clock_freq = 50.0e6
 
 note_map = {
     'Z': 65.4064,
@@ -30,7 +35,7 @@ note_map = {
     'J': 116.541,
     'M': 123.471,
     '<': 130.813,
-    
+
     'z': 130.813,
     's': 138.591,
     'x': 146.832,
@@ -75,13 +80,11 @@ note_map = {
 }
 
 piano_output_file = open(output_file, 'w')
-for ascii_index in range(256):
+piano_output_file.write('static const uint32_t switch_periods[128] = {\n')
+for ascii_index in range(128):
     if chr(ascii_index) in note_map:
         note_freq = note_map[chr(ascii_index)]
         note_tone_switch_period = round(float(clock_freq) / float(note_freq) / 2.0)
-        piano_output_file.write(str(int(note_tone_switch_period)) + "\n")
-    else:
-        piano_output_file.write("0\n")
-
+        piano_output_file.write("    ['{}'] = {},\n".format(chr(ascii_index), note_tone_switch_period))
+piano_output_file.write('};')
 piano_output_file.close()
-

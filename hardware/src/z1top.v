@@ -25,7 +25,6 @@ module z1top #(
     output aud_pwm,
     output aud_sd
 );
-    assign aud_sd = 1'b1;
     wire cpu_clk, cpu_clk_g, cpu_clk_pll_lock;
     wire cpu_clk_pll_fb_out, cpu_clk_pll_fb_in;
 
@@ -56,6 +55,41 @@ module z1top #(
         .CLKINSEL            (1'b1),
         // Other control and status signals
         .LOCKED              (cpu_clk_pll_lock),
+        .PWRDWN              (1'b0),
+        .RST                 (1'b0)
+    );
+    /* lint_on */
+
+    wire pwm_clk, pwm_clk_g, pwm_clk_pll_lock;
+    wire pwm_clk_pll_fb_out, pwm_clk_pll_fb_in;
+
+    BUFG  pwm_clk_buf     (.I(pwm_clk),               .O(pwm_clk_g));
+    BUFG  pwm_clk_f_buf   (.I(pwm_clk_pll_fb_out),    .O (pwm_clk_pll_fb_in));
+
+    // This PLL generates the pwm_clk from the 125 Mhz clock
+    /* verilator lint_off PINMISSING */
+    PLLE2_ADV #(
+        .BANDWIDTH            ("OPTIMIZED"),
+        .COMPENSATION         ("BUF_IN"),  // Not "ZHOLD"
+        .STARTUP_WAIT         ("FALSE"),
+        .DIVCLK_DIVIDE        (5),
+        .CLKFBOUT_MULT        (36),
+        .CLKFBOUT_PHASE       (0.000),
+        .CLKOUT0_DIVIDE       (6),
+        .CLKOUT0_PHASE        (0.000),
+        .CLKOUT0_DUTY_CYCLE   (0.500),
+        .CLKIN1_PERIOD        (8.000)
+    ) plle2_pwm_inst (
+        .CLKFBOUT            (pwm_clk_pll_fb_out),
+        .CLKOUT0             (pwm_clk), // 150 Mhz
+        // Input clock control
+        .CLKFBIN             (pwm_clk_pll_fb_in),
+        .CLKIN1              (CLK_125MHZ_FPGA),
+        .CLKIN2              (1'b0),
+        // Tied to always select the primary input clock
+        .CLKINSEL            (1'b1),
+        // Other control and status signals
+        .LOCKED              (pwm_clk_pll_lock),
         .PWRDWN              (1'b0),
         .RST                 (1'b0)
     );
@@ -99,4 +133,16 @@ module z1top #(
         fpga_serial_tx_iob <= cpu_tx;
         fpga_serial_rx_iob <= FPGA_SERIAL_RX;
     end
+
+    // PWM Controller
+    (* IOB = "true" *) reg pwm_iob;
+    wire pwm_out, pwm_rst, reset_button_sync;
+    synchronizer rst_pwm_sync(.async_signal(reset_button), .sync_signal(reset_button_sync), .clk(pwm_clk_g));
+    assign aud_pwm = pwm_iob;
+    assign aud_sd = 1'b1;
+    always @(posedge pwm_clk_g) begin
+        pwm_iob <= pwm_out;
+    end
+    assign pwm_out = 1'b0;
+    assign pwm_rst = reset_button_sync || ~pwm_clk_pll_lock;
 endmodule
