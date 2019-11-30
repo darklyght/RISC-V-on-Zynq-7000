@@ -722,12 +722,12 @@ The I/O extension to the memory map is in Table \ref{mem_map2}.
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      \verb|32'h80000020| & GPIO FIFO Empty & Read & \verb|{31'b0, empty}| \\
-      \verb|32'h80000024| & GPIO FIFO Read Data & Read & \verb|{28'b0, buttons[2:0]}| \\
+      \verb|32'h80000020| & GPIO FIFO Empty & Read & \verb|{31'd0, empty}| \\
+      \verb|32'h80000024| & GPIO FIFO Read Data & Read & \verb|{29'd0, buttons[2:0]}| \\
       \midrule
-      \verb|32'h80000028| & Switches & Read & \verb|{30'b0, SWITCHES[1:0]}| \\
+      \verb|32'h80000028| & Switches & Read & \verb|{30'd0, SWITCHES[1:0]}| \\
       \midrule
-      \verb|32'h80000030| & GPIO LEDs & Write & \verb|{26'b0, LEDS[5:0]}| \\
+      \verb|32'h80000030| & GPIO LEDs & Write & \verb|{26'd0, LEDS[5:0]}| \\
       \midrule
     \end{tabular}
   \end{center}
@@ -819,7 +819,7 @@ For this first part, your RISC-V core will handle all of the requests and acknow
 
 \begin{table}[hbt]
   \begin{center}
-    \caption{Memory Map for I/O Integration}
+    \caption{Memory Map for PWM Integration}
     \label{mem_map2}
     \begin{tabular}{l l l l}
       \toprule
@@ -842,7 +842,9 @@ Some code has been provided at the bottom \verb|z1top.v| that declares a wire \v
 A PLL has been instantiated in \verb|z1top.v| which produces a 150 Mhz clock (\verb|pwm_clk_g|) used for the PWM controller.
 There's also a \verb|pwm_rst| signal that can be used to reset the PWM controller.
 
-You should test the PWM controller using a block-level testbench and the piano software from the next section.
+You should first test the PWM controller using a block-level testbench.
+Next try creating a testbench similar to the \verb|echo_integration_testbench| that uses the piano software from the next section.
+You will have to load the program into the IMEM and DMEM in simulation and set the \verb|RESET_PC| accordingly (similar to \verb|isa_testbench|).
 
 \subsubsection{Piano Program}
 Load the program in \verb|software/square_piano|.
@@ -857,7 +859,11 @@ The note length can be adjusted using the buttons:
   \item \verb|buttons[3]| = reset note length to 1/3rd of a second
 \end{itemize}
 
-% TODO: scale.h generation instructions for different clock frequencies
+If your processor is running at a frequency other than 50 MHz, regenerate the \verb|scale.h| file. Example below is for 100 MHz.
+\begin{minted}{bash}
+  cd software/square_piano
+  ./piano_scale_generator scale.h 100e6
+\end{minted}
 
 \subsection{Subtractive Synth}
 While the piano program works, it can only play a single note at a time (monophonic synthesis).
