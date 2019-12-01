@@ -4,9 +4,12 @@ module Riscv151 #(
 )(
     input clk,
     input rst,
-    input [3:0] buttons,
+    input [2:0] buttons,
     input [1:0] switches,
     output [5:0] leds,
+    output [11:0] duty_cycle,
+    output req,
+    input ack,
     input FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );
@@ -163,6 +166,8 @@ module Riscv151 #(
     wire dmem_wsel_uart_we;
     wire dmem_wsel_counter_reset;
     wire dmem_wsel_leds_we;
+    wire dmem_wsel_tx_we;
+    wire dmem_wsel_tx_duty_we;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
@@ -199,8 +204,9 @@ module Riscv151 #(
     wire [31:0] dmem_rsel_counter_cycle;
     wire [31:0] dmem_rsel_counter_inst;
     wire dmem_rsel_buttons_empty;
-    wire [3:0] dmem_rsel_buttons;
+    wire [2:0] dmem_rsel_buttons;
     wire [1:0] dmem_rsel_switches;
+    wire dmem_rsel_tx_ack;
     
     wire [31:0] load_extend_din;
     wire [1:0] load_extend_addr;
@@ -254,21 +260,29 @@ module Riscv151 #(
     wire [31:0] counter_inst_count;
     
     wire buttons_fifo_wr_en;
-    wire [3:0] buttons_fifo_din;
+    wire [2:0] buttons_fifo_din;
     wire buttons_fifo_full;
     wire buttons_fifo_rd_en;
-    wire [3:0] buttons_fifo_dout;
+    wire [2:0] buttons_fifo_dout;
     wire buttons_fifo_empty;
     
-    wire [3:0] buttons_buttons;
+    wire [2:0] buttons_buttons;
     wire buttons_wr_en;
-    wire [3:0] buttons_din;
+    wire [2:0] buttons_din;
     wire buttons_full;
     
     wire leds_we;
     wire [5:0] leds_leds_in;
     wire [5:0] leds_leds_out;
     
+    wire handshake_tx_we;
+    wire handshake_tx_duty_we;
+    wire [11:0] handshake_tx_din;
+    wire handshake_tx_ack;
+    wire [11:0] handshake_tx_dout;
+    wire handshake_tx_req;
+    wire handshake_tx_ack_rv;
+
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
         .alu(pc_sel_alu), // From alu
@@ -462,7 +476,9 @@ module Riscv151 #(
         .imem_wea(dmem_wsel_imem_wea), // To imem
         .uart_we(dmem_wsel_uart_we), // To trmt_fifo
         .counter_reset(dmem_wsel_counter_reset), // To counter
-        .leds_we(dmem_wsel_leds_we) // To leds
+        .leds_we(dmem_wsel_leds_we), // To leds
+        .tx_we(dmem_wsel_tx_we), // To pwm
+        .tx_duty_we(dmem_wsel_tx_duty_we) // To pwm
     );
     
     assign dmem_wsel_addr = alu_alu_out;
@@ -545,7 +561,8 @@ module Riscv151 #(
         .counter_inst(dmem_rsel_counter_inst), // From counter
         .buttons_empty(dmem_rsel_buttons_empty), // From buttons_fifo
         .buttons(dmem_rsel_buttons), // From buttons_fifo
-        .switches(dmem_rsel_switches) // From external
+        .switches(dmem_rsel_switches), // From external
+        .tx_ack(dmem_rsel_tx_ack) // From handshake_tx
     );
     
     assign dmem_rsel_addr = writeback_alu;
@@ -559,6 +576,7 @@ module Riscv151 #(
     assign dmem_rsel_buttons_empty = buttons_fifo_empty;
     assign dmem_rsel_buttons = buttons_fifo_dout;
     assign dmem_rsel_switches = switches;
+    assign dmem_rsel_tx_ack = handshake_tx_ack_rv;
     
     load_extend load_extend (
         .din(load_extend_din), // From dmem_rsel
@@ -661,7 +679,7 @@ module Riscv151 #(
     assign counter_writeback_valid = control_counter_inst_valid;
     
     fifo #(
-        .data_width(4),
+        .data_width(3),
         .fifo_depth(fifo_depth)
     ) buttons_fifo (
         .clk(clk),
@@ -694,12 +712,31 @@ module Riscv151 #(
         .clk(clk),
         .rst(rst),
         .we(leds_we), // From dmem_wsel
-        .leds_in(leds_leds_in), // From execute_forward
+        .leds_in(leds_leds_in), // From dmem_wsel
         .leds_out(leds_leds_out) // To external
     );
     
     assign leds_we = dmem_wsel_leds_we;
-    assign leds_leds_in = execute_forward_rs2_data[5:0];
+    assign leds_leds_in = dmem_wsel_data[5:0];
     assign leds = leds_leds_out;
+    
+    handshake_tx handshake_tx (
+        .clk(clk),
+        .rst(rst),
+        .we(handshake_tx_we), // From dmem_wsel
+        .duty_we(handshake_tx_duty_we), // From dmem_wsel
+        .din(handshake_tx_din), // From dmem_wsel
+        .ack(handshake_tx_ack), // From external
+        .dout(handshake_tx_dout), // To external
+        .req(handshake_tx_req), // To external
+        .ack_rv(handshake_tx_ack_rv) // To dmem_rsel
+    );
+    
+    assign handshake_tx_we = dmem_wsel_tx_we;
+    assign handshake_tx_duty_we = dmem_wsel_tx_duty_we;
+    assign handshake_tx_din = dmem_wsel_data[11:0];
+    assign handshake_tx_ack = ack;
+    assign duty_cycle = handshake_tx_dout;
+    assign req = handshake_tx_req;
     
 endmodule

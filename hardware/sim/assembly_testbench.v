@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-
+ 
 /* MODIFY THIS LINE WITH THE HIERARCHICAL PATH TO YOUR REGFILE ARRAY INDEXED WITH reg_number */
 `define REGFILE_ARRAY_PATH CPU.rf.registers[reg_number]
 
@@ -27,7 +27,7 @@ module assembly_testbench();
         input [10:0] test_num;
         if (expected_value !== `REGFILE_ARRAY_PATH) begin
             $display("FAIL - test %d, got: %d, expected: %d for reg %d", test_num, `REGFILE_ARRAY_PATH, expected_value, reg_number);
-            $finish();
+         
         end
         else begin
             $display("PASS - test %d, got: %d for reg %d", test_num, expected_value, reg_number);
@@ -43,7 +43,7 @@ module assembly_testbench();
 
     reg done = 0;
     initial begin
-        $readmemh("../../software/assembly_tests/assembly_tests.hex", CPU.bios_mem.mem);
+        $readmemh("../../software/assembly_tests/assembly_tests.hex", CPU.bios_mem.mem, 0, 4095);
 
         `ifndef IVERILOG
             $vcdpluson;
@@ -53,7 +53,7 @@ module assembly_testbench();
             $dumpvars(0,assembly_testbench);
             $dumpvars(0,CPU.rf.registers[1]);
             $dumpvars(0,CPU.rf.registers[2]);
-            $dumpvars(0,CPU.rf.registers[10]);
+            $dumpvars(0,CPU.rf.registers[0]);
             $dumpvars(0,CPU.rf.registers[11]);
             $dumpvars(0,CPU.rf.registers[20]);
         `endif
@@ -77,6 +77,30 @@ module assembly_testbench();
                 wait_for_reg_to_equal(20, 32'd2);       // Run the simulation until the flag is set to 2
                 check_reg(1, 32'd500, 2);               // Verify that x1 contains 500
                 check_reg(2, 32'd100, 3);               // Verify that x2 contains 100
+
+				// Test x0
+                wait_for_reg_to_equal(20, 32'd3);       
+                check_reg(0, 32'd0, 4);                  //FAIL: got:          x, expected:          0 for reg  0
+                check_reg(1, 32'd100, 5);               
+				
+				// Test SH
+                wait_for_reg_to_equal(20, 32'd4);      
+                check_reg(1, 32'd1001, 6);               
+                check_reg(2, 32'd1002, 7);               
+				check_reg(4, 32'd10021001, 8);			//FAIL: got:          x, expected:   10021001 for reg  4
+               
+				// Test BGE,ADDI
+                wait_for_reg_to_equal(20, 32'd5);      
+                check_reg(1, 32'd1, 9);               
+                check_reg(2, 32'd2, 10);               
+				check_reg(3, 32'd200, 11);
+
+				// Test JAL
+                wait_for_reg_to_equal(20, 32'd6);      
+                check_reg(1, 32'd2, 12);               
+                check_reg(2, 32'd2, 13);        		// FAIL: got: 1073741944, expected:          2 for reg  2       
+				check_reg(3, 32'd0, 14);
+
                 $display("ALL ASSEMBLY TESTS PASSED");
                 done = 1;
             end

@@ -12,7 +12,9 @@ module dmem_wsel (
     output [3:0] imem_wea,
     output uart_we,
     output counter_reset,
-    output leds_we
+    output leds_we,
+    output tx_we,
+    output tx_duty_we
 );
 
     reg [3:0] wea;
@@ -70,5 +72,6 @@ module dmem_wsel (
     assign uart_we = addr[31] == 1'b1 && addr[5:3] == 3'b001 ? wea[0] : 1'b0;
     assign counter_reset = addr[31] == 1'b1 && addr[5:3] == 3'b011 ? 1'b1 : 1'b0;
     assign leds_we = addr[31] == 1'b1 && addr[5:3] == 3'b110 ? 1'b1 : 1'b0;
-    
+    assign tx_we = addr[31] == 1'b1 && addr[5:4] == 2'b11 ? 1'b1 : 1'b0;    
+    assign tx_duty_we = addr[3];
 endmodule

@@ -9,6 +9,12 @@ module reg_file (
     
     integer i;
 
+    initial begin
+        for (i = 0; i < 32; i = i + 1) begin
+            registers[i] = 32'b0;
+        end
+    end
+
     always @ (posedge clk) begin
         if (we == 1'b1) begin
             if (wa != 5'b0) begin
