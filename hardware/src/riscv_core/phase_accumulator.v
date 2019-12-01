@@ -1,26 +1,38 @@
 module phase_accumulator #(
-    parameter CPU_CLOCK_FREQ = 50_000_000
+    parameter CPU_CLOCK_FREQ = 50_000_000,
+    parameter SAMPLING_RATE = 44_100,
+    parameter MAX_COUNT = CPU_CLOCK_FREQ / SAMPLING_RATE
 ) (
     input clk,
     input rst,
     input [14:0] frequency,
-    output [17:0] phase
+    output reg [17:0] phase,
+    output en
 );
     
-    reg [47:0] counter;
-    wire [63:0] total;
-    wire [63:0] increment;
+    reg [11:0] counter;
+    wire [17:0] increment;
     
-    assign total = frequency << 48;
-    assign increment = total / CPU_CLOCK_FREQ;
-
+    assign increment = (frequency << 18) / SAMPLING_RATE;
+    
     always @ (posedge clk) begin
         if (rst)
-            counter <= 48'b0;
+            counter <= 12'b0;
         else
-            counter <= counter + increment[47:0];
+            if (counter >= MAX_COUNT) 
+                counter <= 12'b0;
+            else
+                counter <= counter + 1'b1;
     end
     
-    assign phase = counter[47:30];
+    assign en = (counter >= MAX_COUNT);
+    
+    always @ (posedge clk) begin
+        if (rst)
+            phase <= 12'b0;
+        else
+            if (counter >= MAX_COUNT)
+                phase <= phase + increment;
+    end
     
 endmodule

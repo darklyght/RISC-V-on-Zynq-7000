@@ -103,7 +103,7 @@ def synthesizer(melody, attack_release, fc, time_unit, res):
 	for time in range(len(melody)):
 		
 		# generates wave based on frequency
-		wave = wave_generator(time, melody[time], time_unit, 1) 
+		wave = wave_generator(time, melody[time], time_unit, 2) 
 		wave = resolution_limit(wave,res)
 		waves[time] = wave
 
@@ -165,13 +165,13 @@ def synthesizer(melody, attack_release, fc, time_unit, res):
 fs = 44100 # sampling frequency 44.1KHz
 time_unit = 1/fs # sampling period
 res = 9 # resolution of data & coefficient
-melody = [100] * 60000 # array of frequencies to be played (100Hz)
+melody = [10000] * 60000 # array of frequencies to be played (100Hz)
 fc = 10000 # corner frequency of filter, play with this yourself
 attack,release = (1000,30000) # onset time of attack and release
 waves, waves_out = synthesizer(melody, (attack,release), fc, time_unit, res)
-# plt.plot(waves)
-# plt.plot(waves_out)
-# plt.show()
+plt.plot(waves)
+plt.plot(waves_out)
+plt.show()
 
 # write to wav file
 output_wav = wave.open('piano_note.wav','w')

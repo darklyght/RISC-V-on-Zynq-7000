@@ -1,5 +1,6 @@
 module triangle_lut (
     input clk,
+    input en,
     input [14:0] addr,
     output reg [11:0] dout
 );
