@@ -21,3 +21,5 @@ ucli.key
 *.db
 *.hier
 *.sml
+.mypy_cache
+*.bin
