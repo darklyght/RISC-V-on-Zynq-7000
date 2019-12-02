@@ -4,16 +4,40 @@ module nco #(
     input clk,
     input rst,
     input [14:0] frequency,
-    output [11:0] wave
+    input [2:0] sine_weight,
+    input [2:0] triangle_weight,
+    input [2:0] sawtooth_weight,
+    input [2:0] square_weight,
+    output reg [11:0] wave,
+    output reg en
 );
     
     wire [17:0] phase;
+    wire pa_en;
+    reg [1:0] pa_en_sync;
     wire [11:0] sine_out;
-    wire [11:0] sine_out_d;
-    wire [3:0] sine_p;
-    wire [3:0] sine_n;
-    reg [2:0] sine_residue;
-    reg [15:0] sine;
+    wire [11:0] triangle_out;
+    wire [11:0] sawtooth_out;
+    wire [11:0] square_out;
+    wire [15:0] wave_out;
+    wire [3:0] sine_weight_e;
+    wire [3:0] triangle_weight_e;
+    wire [3:0] sawtooth_weight_e;
+    wire [3:0] square_weight_e;
+    
+    assign sine_weight_e = {1'b0, sine_weight};
+    assign triangle_weight_e = {1'b0, triangle_weight};
+    assign sawtooth_weight_e = {1'b0, sawtooth_weight};
+    assign square_weight_e = {1'b0, square_weight};
+    assign wave_out = $signed(sine_weight_e) * $signed(sine_out) + $signed(triangle_weight_e) * $signed(triangle_out) + $signed(sawtooth_weight_e) * $signed(sawtooth_out) + $signed(square_weight_e) * $signed(square_out);
+    
+    always @ (posedge clk) begin
+        pa_en_sync <= {pa_en_sync[0], pa_en};
+    end
+    
+    always @ (posedge clk) begin
+        en <= pa_en_sync[1];
+    end
     
     phase_accumulator #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
@@ -21,38 +45,44 @@ module nco #(
         .clk(clk),
         .rst(rst),
         .frequency(frequency),
-        .phase(phase)
+        .phase(phase),
+        .en(pa_en)
     );
     
-    sine_lut sine_lut (
+    sine_wave sine_wave (
         .clk(clk),
-        .addr(phase[17:3]),
-        .dout(sine_out)
+        .rst(rst),
+        .phase(phase),
+        .wave(sine_out)
     );
     
-    sine_lut sine_lut_d (
+    triangle_wave triangle_wave (
         .clk(clk),
-        .addr(phase[17:3] + 14'b1),
-        .dout(sine_out_d)
+        .rst(rst),
+        .phase(phase[17:3]),
+        .wave(triangle_out)
     );
-
+    
+    sawtooth_wave sawtooth_wave (
+        .clk(clk),
+        .rst(rst),
+        .phase(phase[17:3]),
+        .wave(sawtooth_out)
+    );
+    
+    square_wave square_wave (
+        .clk(clk),
+        .rst(rst),
+        .phase(phase[17:3]),
+        .wave(square_out)
+    );
+    
     always @ (posedge clk) begin
         if (rst)
-            sine_residue <= 3'b0;
+            wave <= 12'b0;
         else
-            sine_residue <= phase[2:0];
+            if (pa_en_sync[1])
+                wave <= wave_out[13:2];
     end
-    
-    assign sine_p = {1'b0, sine_residue};
-    assign sine_n = 4'b1000 - sine_residue;
-    
-    always @ (posedge clk) begin
-        if (rst)
-            sine <= 16'b0;
-        else
-            sine <= sine_out * sine_n + sine_out_d * sine_p;
-    end
-    
-    assign wave = sine[14:3];
     
 endmodule
