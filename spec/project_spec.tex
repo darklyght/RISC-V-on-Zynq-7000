@@ -89,7 +89,7 @@ The following is a brief description of each checkpoint and approximately how ma
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement your RISC-V processor core in Verilog and write tests to verify your implementation.
   \item \textbf{\audioDueDate \space - \audioTaskName \space (\audioTimeAlloted)} - Attach I/O components from lab to your processor (FIFOs, buttons, switches), general PWM controller, basic subtractive synthesizer
-  \item \textbf{\dfsDueDate \space - \dfsTaskName \space (\dfsTimeAlloted)} - Implement a dedicated power management unit to monitor FPGA temperature and power consumption and dynamically switch the operating frequency of the main CPU.
+  %\item \textbf{\dfsDueDate \space - \dfsTaskName \space (\dfsTimeAlloted)} - Implement a dedicated power management unit to monitor FPGA temperature and power consumption and dynamically switch the operating frequency of the main CPU.
   \item \textbf{\finalCheckoffDueDate \space - Final Checkoff} - Final processor optimization and checkoff
   \item \textbf{\finalReportDueDate \space - Project Report} - Final report due
 \end{itemize}
@@ -1061,9 +1061,9 @@ This 1-bit register should be synchronized to the PWM clock domain and controls 
 %% SVF bypass enable
 
 \subsubsection{Amplitude Envelope (ADSR) - Optional}
-%% Envelope attack time
-%% Envelope sustain level
-%% Envelope release time
+%% Envelope attack increment per sample
+%% Envelope sustain level (assumed to be 1, so don't define it)
+%% Envelope release decrement per sample (assumed floor to be 0)
 
 \subsubsection{Polyphonic Synthesis - 251A Only}
 
