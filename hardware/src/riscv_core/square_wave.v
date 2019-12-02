@@ -9,9 +9,9 @@ module square_wave (
     
     always @ (posedge clk) begin
         if (phase <= 15'd16384)
-            out <= 12'd4095;
+            out <= 12'h7FC;
         else
-            out <= 12'd0;
+            out <= 12'h804;
     end
     
     always @ (posedge clk) begin

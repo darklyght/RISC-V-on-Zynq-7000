@@ -8,17 +8,36 @@ module nco #(
     input [2:0] triangle_weight,
     input [2:0] sawtooth_weight,
     input [2:0] square_weight,
-    output reg [11:0] wave
+    output reg [11:0] wave,
+    output reg en
 );
     
     wire [17:0] phase;
+    wire pa_en;
+    reg [1:0] pa_en_sync;
     wire [11:0] sine_out;
     wire [11:0] triangle_out;
     wire [11:0] sawtooth_out;
     wire [11:0] square_out;
-    wire [14:0] wave_out;
+    wire [15:0] wave_out;
+    wire [3:0] sine_weight_e;
+    wire [3:0] triangle_weight_e;
+    wire [3:0] sawtooth_weight_e;
+    wire [3:0] square_weight_e;
     
-    assign wave_out = sine_weight * sine_out + triangle_weight * triangle_out + sawtooth_weight * sawtooth_out + square_weight * square_out;
+    assign sine_weight_e = {1'b0, sine_weight};
+    assign triangle_weight_e = {1'b0, triangle_weight};
+    assign sawtooth_weight_e = {1'b0, sawtooth_weight};
+    assign square_weight_e = {1'b0, square_weight};
+    assign wave_out = $signed(sine_weight_e) * $signed(sine_out) + $signed(triangle_weight_e) * $signed(triangle_out) + $signed(sawtooth_weight_e) * $signed(sawtooth_out) + $signed(square_weight_e) * $signed(square_out);
+    
+    always @ (posedge clk) begin
+        pa_en_sync <= {pa_en_sync[0], pa_en};
+    end
+    
+    always @ (posedge clk) begin
+        en <= pa_en_sync[1];
+    end
     
     phase_accumulator #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
@@ -26,7 +45,8 @@ module nco #(
         .clk(clk),
         .rst(rst),
         .frequency(frequency),
-        .phase(phase)
+        .phase(phase),
+        .en(pa_en)
     );
     
     sine_wave sine_wave (
@@ -61,7 +81,8 @@ module nco #(
         if (rst)
             wave <= 12'b0;
         else
-            wave <= wave_out[13:2];
+            if (pa_en_sync[1])
+                wave <= wave_out[13:2];
     end
     
 endmodule
