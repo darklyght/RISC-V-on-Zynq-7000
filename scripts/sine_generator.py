@@ -5,5 +5,5 @@ def twos_comp(val, bits):
     return val
 
 with open ('sine_lut.hex', 'w') as f:
-    for i in range(0, 32768):
-        f.write('{:x}'.format(twos_comp(int(math.sin(2*math.pi*i/32768)*2047), 12)) + "\n")
+    for i in range(0, 256):
+        f.write('{:b}'.format(twos_comp(int(math.sin(2*math.pi*i/256)*65536), 21)).rjust(21, '0') + "\n")

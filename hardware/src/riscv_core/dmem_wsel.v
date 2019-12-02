@@ -70,8 +70,8 @@ module dmem_wsel (
     assign dmem_wea = addr[28] == 1'b1 ? wea : 4'b0000;
     assign imem_wea = addr[29] == 1'b1 && pc30 == 1'b1 ? wea : 4'b0000;
     assign uart_we = addr[31] == 1'b1 && addr[5:3] == 3'b001 ? wea[0] : 1'b0;
-    assign counter_reset = addr[31] == 1'b1 && addr[5:3] == 3'b011 ? 1'b1 : 1'b0;
-    assign leds_we = addr[31] == 1'b1 && addr[5:3] == 3'b110 ? 1'b1 : 1'b0;
-    assign tx_we = addr[31] == 1'b1 && addr[5:4] == 2'b11 ? 1'b1 : 1'b0;    
+    assign counter_reset = addr[31] == 1'b1 && addr[5:3] == 3'b011 ? |wea : 1'b0;
+    assign leds_we = addr[31] == 1'b1 && addr[5:3] == 3'b110 ? wea[0] : 1'b0;
+    assign tx_we = addr[31] == 1'b1 && addr[5:4] == 2'b11 ? |wea : 1'b0;    
     assign tx_duty_we = addr[2];
 endmodule

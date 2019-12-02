@@ -56,9 +56,11 @@ module pwm_testbench();
     initial begin
         $readmemh("../../software/bios151v3/bios151v3.hex", fpga.cpu.bios_mem.mem);
         $readmemh("../../software/square_piano/square_piano.hex", fpga.cpu.imem.mem);
+        $readmemh("../../software/square_piano/square_piano.hex", fpga.cpu.dmem.mem);
 
         `ifndef IVERILOG
             $vcdpluson;
+            $vcdplusmemon;
         `endif
         `ifdef IVERILOG
             $dumpfile("pwm_testbench.fst");
@@ -69,6 +71,7 @@ module pwm_testbench();
         buttons[0] = 1;
         repeat (100) @(posedge clk);
         buttons[0] = 0;
+        switches = 2'b11;
         rst = 1'b0;
         data_in_valid = 1'b0;
         data_out_ready = 1'b0;
@@ -150,9 +153,11 @@ module pwm_testbench();
                 while (!data_in_ready) @(posedge clk); #1;
                 data_in = 8'h71;
                 data_in_valid = 1'b1;
+                @(posedge clk); #1;
+                data_in_valid = 1'b0;
             end
             begin
-                repeat (200000) @(posedge clk);
+                repeat (500000) @(posedge clk);
                 $finish();
             end
         join

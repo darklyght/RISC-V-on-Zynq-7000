@@ -19,12 +19,12 @@ module dmem_rsel (
             4'b0100:
                 dout = bios_doutb;
             4'b1000:
-                case (addr[5:4])
-                    2'b00:
+                case (addr[6:4])
+                    3'b000:
                         dout = addr[2] ? {24'b0, recv_data} : {30'b0, ~recv_empty, ~trmt_full};
-                    2'b10:
+                    3'b010:
                         dout = addr[3] ? {30'b0, switches} : addr[2] ? {29'b0, buttons} : {31'b0, buttons_empty};
-                    2'b11:
+                    3'b100:
                         dout = {31'b0, tx_ack};
                     default:
                         dout = addr[2] ? counter_inst : counter_cycle;
