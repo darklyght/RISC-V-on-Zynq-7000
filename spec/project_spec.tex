@@ -985,21 +985,35 @@ You should get linear interpolation working after building the basic NCO.
 
 \paragraph{NCO Model}
 We've provided a model of the NCO in \verb|scripts/synth/nco.py|.
-You can uncomment parts of the main function to:
+You can run these commands.
+You can replace \verb|sine| with \verb|square|, \verb|triangle|, or \verb|sawtooth|.
 \begin{enumerate}
-  \item Plot NCO samples vs ideal samples from a sine function (to play with how to choose $N$ and $M$ and the effect of interpolation)
-  \item Dump the binary representation of the 4 types of LUTs (so they can be used by \verb|$readmemb| in Verilog)
-  \item Dump the golden NCO samples for a given signal frequency (to check against the RTL implementation)
+  \item \verb|./nco.py --analysis| - Plot NCO samples vs ideal samples from a sine function (to play with how to choose $N$ and $M$ and the effect of interpolation)
+  \item \verb|./nco.py --sine-lut| - Dump the binary representation of the 4 types of LUTs (so they can be used by \verb|$readmemb| in Verilog)
+  \item \verb|./nco.py --sine-plot| - Plot the sine LUT values
+  \item \verb|./nco.py --golden| - Dump the golden sample values for $f_{samp} = 30 \text{kHz}$ and $f_{sig} = 880 \text{Hz}$
 \end{enumerate}
 
+You can dump a LUT to a file like: \verb|./nco.py --triangle-lut > triangle.bin|.
+
 \paragraph{Waveform Summation}
-The NCO is responsible for generating all 4 waveform types per sample and summing them together after scaling each waveform's sample value.
-The scaling is done with a simple arithmetic right shift amount assigned to each waveform type.
+The NCO produces all 4 waveform types per sample.
+Another module, following the NCO, sums them together after scaling each waveform's sample.
+The scaling is done with an arithmetic right shift amount assigned to each waveform type.
 
 \paragraph{Implementation}
 The NCO implementation details are up to you.
 Note that it is OK to use several clock cycles to generate one sample value, so pipelining is useful for making sure your critical paths are short.
 We recommend that the NCO uses a ready/valid interface to produce samples (that are later consumed by the sample buffer).
+
+You can read in a LUT binary using \verb|$readmemb()|:
+\begin{minted}{verilog}
+reg [x:0] sine_lut [0:y];
+`define STRINGIFY_SINELUT(x) `"x/src/audio/sine.bin`"
+initial begin
+  \$readmemh(`STRINGIFY_SINELUT(`ABS_TOP), sine_lut);
+end
+\end{minted}
 
 The NCO should be hooked up to the RISC-V core via MMIO:
 \begin{table}[hbt]
@@ -1040,7 +1054,7 @@ This 1-bit register should be synchronized to the PWM clock domain and controls 
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      \verb|32'h80000040| & PWM DAC Source & Write & \verb|{31'd0, source}| \\
+      \verb|32'h80000044| & PWM DAC Source & Write & \verb|{31'd0, source}| \\
       \midrule
       \verb|32'h80000100| & Global Synth Reset & Write & \verb|NA| \\
       \midrule
