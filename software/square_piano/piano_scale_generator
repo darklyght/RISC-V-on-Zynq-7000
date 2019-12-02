@@ -80,7 +80,7 @@ note_map = {
 }
 
 piano_output_file = open(output_file, 'w')
-piano_output_file.write('static const uint32_t switch_periods[128] = {\n')
+piano_output_file.write('static const uint32_t switch_periods[256] = {\n')
 for ascii_index in range(128):
     if chr(ascii_index) in note_map:
         note_freq = note_map[chr(ascii_index)]
