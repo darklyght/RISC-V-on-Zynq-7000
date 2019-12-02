@@ -15,3 +15,5 @@
 csrc
 ucli.key
 *.wav
+.mypy_cache
+*.bin
