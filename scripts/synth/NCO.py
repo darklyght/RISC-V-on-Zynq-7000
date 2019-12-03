@@ -9,26 +9,13 @@ from typing import Tuple
 import argparse
 
 NCOType = Tuple[FXnum, FXnum, FXnum, FXnum]
-
-class GoldenSynth:
-    def __init__(self, fsamp: float, sine_shift: int, square_shift: int, triangle_shift: int, sawtooth_shift: int) -> None:
-        self.fsamp = fsamp
-        self.sine_shift = sine_shift
-        self.square_shift = square_shift
-        self.triangle_shift = triangle_shift
-        self.sawtooth_shift = sawtooth_shift
-
-class Mixer:
-    def __init__(self) -> None:
-        pass
-    def next_sample(self, nco_in: NCOType) -> FXnum:
-        pass
+output_type = FXfamily(n_bits=16, n_intbits=4)
 
 class NCO:
     def __init__(self, fsamp: float, interpolate: bool) -> None:
         self.fsamp = fsamp
         self.interpolate = interpolate
-        self.output_type = FXfamily(n_bits=16, n_intbits=4)
+        self.output_type = output_type
         self.phase_acc = 0 # type: int
         self.N = 24
         self.M = 8
@@ -67,8 +54,15 @@ class NCO:
         return samples
 
     def next_sample_f(self, freq: float) -> Tuple[FXnum, FXnum, FXnum, FXnum]:
-        phase_increment = (freq / self.fsamp) * 2**self.N
-        return self.next_sample(int(round(phase_increment)))
+        #phase_increment = (freq / self.fsamp) * 2**self.N
+        return self.next_sample(self.phase_increment(freq))
+                #int(round(phase_increment)))
+
+    def phase_increment(self, freq: float) -> int:
+        return int(round((freq / self.fsamp) * 2**self.N))
+
+    def effective_frequency(self, phase_increment: int) -> float:
+        return (phase_increment * self.fsamp) / (2**self.N)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='NCO Model')
@@ -94,7 +88,9 @@ if __name__ == "__main__":
     if args.analysis:
         nco_sine_samples = [x[0] for x in nco_samples]
         nco_samples_float = [float(x) for x in nco_sine_samples]
-        ideal_samples = [np.sin(2*np.pi*fsig*n/fsamp) for n in range(num_samples)]
+        phase_increment = nco.phase_increment(fsig)
+        effective_freq = nco.effective_frequency(phase_increment)
+        ideal_samples = [np.sin(2*np.pi*effective_freq*n/fsamp) for n in range(num_samples)]
 
         ## Plot NCO vs ideal samples
         import matplotlib.pyplot as plt

@@ -17,3 +17,4 @@ ucli.key
 *.wav
 .mypy_cache
 *.bin
+__pycache__
