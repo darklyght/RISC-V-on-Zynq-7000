@@ -11,7 +11,10 @@ module Riscv151 #(
     output req,
     input ack,
     input FPGA_SERIAL_RX,
-    output FPGA_SERIAL_TX
+    output FPGA_SERIAL_TX,
+    output dac_source,
+    output [11:0] wave,
+    output valid
 );
     // Memories
     wire [11:0] bios_addra, bios_addrb;
@@ -168,6 +171,21 @@ module Riscv151 #(
     wire dmem_wsel_leds_we;
     wire dmem_wsel_tx_we;
     wire dmem_wsel_tx_duty_we;
+    wire dmem_wsel_dac_source_we;
+    wire dmem_wsel_gsr_we;
+    wire dmem_wsel_global_shift_we;
+    wire dmem_wsel_sine_shift_we;
+    wire dmem_wsel_square_shift_we;
+    wire dmem_wsel_triangle_shift_we;
+    wire dmem_wsel_sawtooth_shift_we;
+    wire dmem_wsel_voice_1_we;
+    wire dmem_wsel_voice_2_we;
+    wire dmem_wsel_voice_3_we;
+    wire dmem_wsel_voice_4_we;
+    wire dmem_wsel_fcw_we;
+    wire dmem_wsel_note_start_we;
+    wire dmem_wsel_note_release_we;
+    wire dmem_wsel_reset_we;
     
     wire [31:0] pc4_gen_pc;
     wire [31:0] pc4_gen_pc4;
@@ -207,6 +225,10 @@ module Riscv151 #(
     wire [2:0] dmem_rsel_buttons;
     wire [1:0] dmem_rsel_switches;
     wire dmem_rsel_tx_ack;
+    wire dmem_rsel_voice_1_finished;
+    wire dmem_rsel_voice_2_finished;
+    wire dmem_rsel_voice_3_finished;
+    wire dmem_rsel_voice_4_finished;
     
     wire [31:0] load_extend_din;
     wire [1:0] load_extend_addr;
@@ -282,6 +304,75 @@ module Riscv151 #(
     wire [11:0] handshake_tx_dout;
     wire handshake_tx_req;
     wire handshake_tx_ack_rv;
+
+    wire dac_source_register_we;
+    wire dac_source_register_source_in;
+    wire dac_source_register_source_out;
+
+    wire global_shift_we;
+    wire [4:0] global_shift_shift_in;
+    wire [4:0] global_shift_shift_out;
+
+    wire sine_shift_we;
+    wire [4:0] sine_shift_shift_in;
+    wire [4:0] sine_shift_shift_out;
+
+    wire square_shift_we;
+    wire [4:0] square_shift_shift_in;
+    wire [4:0] square_shift_shift_out;
+
+    wire triangle_shift_we;
+    wire [4:0] triangle_shift_shift_in;
+    wire [4:0] triangle_shift_shift_out;
+
+    wire sawtooth_shift_we;
+    wire [4:0] sawtooth_shift_shift_in;
+    wire [4:0] sawtooth_shift_shift_out;
+
+    wire voice_1_fcw_we;
+    wire [23:0] voice_1_fcw_fcw_in;
+    wire [23:0] voice_1_fcw_fcw_out;
+
+    wire voice_2_fcw_we;
+    wire [23:0] voice_2_fcw_fcw_in;
+    wire [23:0] voice_2_fcw_fcw_out;
+
+    wire voice_3_fcw_we;
+    wire [23:0] voice_3_fcw_fcw_in;
+    wire [23:0] voice_3_fcw_fcw_out;
+
+    wire voice_4_fcw_we;
+    wire [23:0] voice_4_fcw_fcw_in;
+    wire [23:0] voice_4_fcw_fcw_out;
+
+    wire wave_generator_global_reset;
+    wire [4:0] wave_generator_global_shift;
+    wire [4:0] wave_generator_sine_shift;
+    wire [4:0] wave_generator_square_shift;
+    wire [4:0] wave_generator_triangle_shift;
+    wire [4:0] wave_generator_sawtooth_shift;
+    wire [23:0] wave_generator_increment_1;
+    wire wave_generator_note_start_1;
+    wire wave_generator_note_release_1;
+    wire wave_generator_note_reset_1;
+    wire wave_generator_note_finished_1;
+    wire [23:0] wave_generator_increment_2;
+    wire wave_generator_note_start_2;
+    wire wave_generator_note_release_2;
+    wire wave_generator_note_reset_2;
+    wire wave_generator_note_finished_2;
+    wire [23:0] wave_generator_increment_3;
+    wire wave_generator_note_start_3;
+    wire wave_generator_note_release_3;
+    wire wave_generator_note_reset_3;
+    wire wave_generator_note_finished_3;
+    wire [23:0] wave_generator_increment_4;
+    wire wave_generator_note_start_4;
+    wire wave_generator_note_release_4;
+    wire wave_generator_note_reset_4;
+    wire wave_generator_note_finished_4;
+    wire [11:0] wave_generator_wave;
+    wire wave_generator_valid;
 
     pc_sel pc_sel (
         .pc_sel(pc_sel_pc_sel), // From control
@@ -478,7 +569,22 @@ module Riscv151 #(
         .counter_reset(dmem_wsel_counter_reset), // To counter
         .leds_we(dmem_wsel_leds_we), // To leds
         .tx_we(dmem_wsel_tx_we), // To pwm
-        .tx_duty_we(dmem_wsel_tx_duty_we) // To pwm
+        .tx_duty_we(dmem_wsel_tx_duty_we), // To pwm
+        .dac_source_we(dmem_wsel_dac_source_we), // To dac_source_register
+        .gsr_we(dmem_wsel_gsr_we), // To wave_generator
+        .global_shift_we(dmem_wsel_global_shift_we), // To global_shift
+        .sine_shift_we(dmem_wsel_sine_shift_we), // To sine_shift
+        .square_shift_we(dmem_wsel_square_shift_we), // To square_shift
+        .triangle_shift_we(dmem_wsel_triangle_shift_we), // To triangle_shift
+        .sawtooth_shift_we(dmem_wsel_sawtooth_shift_we), // To sawtooth_shift
+        .voice_1_we(dmem_wsel_voice_1_we), // To voice_1_fcw
+        .voice_2_we(dmem_wsel_voice_2_we), // To voice_2_fcw
+        .voice_3_we(dmem_wsel_voice_3_we), // To voice_3_fcw
+        .voice_4_we(dmem_wsel_voice_4_we), // To voice_4_fcw
+        .fcw_we(dmem_wsel_fcw_we), // To voice_1_fcw, voice_2_fcw, voice_3_fcw, voice_4_fcw
+        .note_start_we(dmem_wsel_note_start_we), // To wave_generator
+        .note_release_we(dmem_wsel_note_release_we), // To wave generator
+        .reset_we(dmem_wsel_reset_we) // To wave generator
     );
     
     assign dmem_wsel_addr = alu_alu_out;
@@ -562,7 +668,11 @@ module Riscv151 #(
         .buttons_empty(dmem_rsel_buttons_empty), // From buttons_fifo
         .buttons(dmem_rsel_buttons), // From buttons_fifo
         .switches(dmem_rsel_switches), // From external
-        .tx_ack(dmem_rsel_tx_ack) // From handshake_tx
+        .tx_ack(dmem_rsel_tx_ack), // From handshake_tx
+        .voice_1_finished(dmem_rsel_voice_1_finished), // From wave_generator
+        .voice_2_finished(dmem_rsel_voice_2_finished), // From wave_generator
+        .voice_3_finished(dmem_rsel_voice_3_finished), // From wave_generator
+        .voice_4_finished(dmem_rsel_voice_4_finished) // From wave_generator
     );
     
     assign dmem_rsel_addr = writeback_alu;
@@ -577,6 +687,10 @@ module Riscv151 #(
     assign dmem_rsel_buttons = buttons_fifo_dout;
     assign dmem_rsel_switches = switches;
     assign dmem_rsel_tx_ack = handshake_tx_ack_rv;
+    assign dmem_rsel_voice_1_finished = wave_generator_note_finished_1;
+    assign dmem_rsel_voice_2_finished = wave_generator_note_finished_2;
+    assign dmem_rsel_voice_3_finished = wave_generator_note_finished_3;
+    assign dmem_rsel_voice_4_finished = wave_generator_note_finished_4;
     
     load_extend load_extend (
         .din(load_extend_din), // From dmem_rsel
@@ -738,5 +852,174 @@ module Riscv151 #(
     assign handshake_tx_ack = ack;
     assign duty_cycle = handshake_tx_dout;
     assign req = handshake_tx_req;
+
+    dac_source_register dac_source_register (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(dac_source_register_we), // From dmem_wsel
+    	.source_in(dac_source_register_source_in),  // From dmem_wsel
+    	.source_out(dac_source_register_source_out)  // To external
+	);
+	
+	assign dac_source_register_we = dmem_wsel_dac_source_we;
+	assign dac_source_register_source_in = dmem_wsel_data[0];
+	assign dac_source = dac_source_register_source_out;
+
+   	shift_register global_shift (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(global_shift_we), // From dmem_wsel
+    	.shift_in(global_shift_shift_in), // From dmem_wsel
+    	.shift_out(global_shift_shift_out) // To wave_generator
+	);
+	
+	assign global_shift_we = dmem_wsel_global_shift_we;
+	assign global_shift_shift_in = dmem_wsel_data[4:0];
+
+   	shift_register sine_shift (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(sine_shift_we), // From dmem_wsel
+    	.shift_in(sine_shift_shift_in), // From dmem_wsel
+    	.shift_out(sine_shift_shift_out) // To wave_generator
+	);
+	
+	assign sine_shift_we = dmem_wsel_sine_shift_we;
+	assign sine_shift_shift_in = dmem_wsel_data[4:0];
+
+   	shift_register square_shift (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(square_shift_we), // From dmem_wsel
+    	.shift_in(square_shift_shift_in),  // From dmem_wsel
+    	.shift_out(square_shift_shift_out) // To wave_generator
+	);
+	
+	assign square_shift_we = dmem_wsel_square_shift_we;
+	assign square_shift_shift_in = dmem_wsel_data[4:0];
+
+   	shift_register triangle_shift (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(triangle_shift_we), // From dmem_wsel
+    	.shift_in(triangle_shift_shift_in), // From dmem_wsel
+    	.shift_out(triangle_shift_shift_out) // To wave_generator
+	);
+	
+	assign triangle_shift_we = dmem_wsel_triangle_shift_we;
+	assign triangle_shift_shift_in = dmem_wsel_data[4:0];
+
+   	shift_register sawtooth_shift (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(sawtooth_shift_we), // From dmem_wsel
+    	.shift_in(sawtooth_shift_shift_in), // From dmem_wsel
+    	.shift_out(sawtooth_shift_shift_out) // To wave_generator
+	);
+	
+	assign sawtooth_shift_we = dmem_wsel_sawtooth_shift_we;
+	assign sawtooth_shift_shift_in = dmem_wsel_data[4:0];
+
+	fcw_register voice_1_fcw (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(voice_1_fcw_we), // From dmem_wsel
+    	.fcw_in(voice_1_fcw_fcw_in),  // From dmem_wsel
+    	.fcw_out(voice_1_fcw_fcw_out)  //To wave_generator
+	);
+
+	assign voice_1_fcw_we = dmem_wsel_voice_1_we & dmem_wsel_fcw_we;
+	assign voice_1_fcw_fcw_in = dmem_wsel_data[23:0];
+
+	fcw_register voice_2_fcw (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(voice_2_fcw_we), // From dmem_wsel
+    	.fcw_in(voice_2_fcw_fcw_in),  // From dmem_wsel
+    	.fcw_out(voice_2_fcw_fcw_out)  //To wave_generator
+	);
+
+	assign voice_2_fcw_we = dmem_wsel_voice_2_we & dmem_wsel_fcw_we;
+	assign voice_2_fcw_fcw_in = dmem_wsel_data[23:0];
+
+	fcw_register voice_3_fcw (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(voice_3_fcw_we), // From dmem_wsel
+    	.fcw_in(voice_3_fcw_fcw_in),  // From dmem_wsel
+    	.fcw_out(voice_3_fcw_fcw_out)  //To wave_generator
+	);
+
+	assign voice_3_fcw_we = dmem_wsel_voice_3_we & dmem_wsel_fcw_we;
+	assign voice_3_fcw_fcw_in = dmem_wsel_data[23:0];
+
+	fcw_register voice_4_fcw (
+    	.clk(clk),
+    	.rst(rst),
+    	.we(voice_4_fcw_we), // From dmem_wsel
+    	.fcw_in(voice_4_fcw_fcw_in),  // From dmem_wsel
+    	.fcw_out(voice_4_fcw_fcw_out)  //To wave_generator
+	);
+
+	assign voice_4_fcw_we = dmem_wsel_voice_4_we & dmem_wsel_fcw_we;
+	assign voice_4_fcw_fcw_in = dmem_wsel_data[23:0];
+
+    wave_generator wave_generator (
+        .clk(clk),
+        .rst(rst),
+        .global_reset(wave_generator_global_reset), // From dmem_wsel
+        .global_shift(wave_generator_global_shift), // From global_shift
+        .sine_shift(wave_generator_sine_shift), // From sine_shift
+        .square_shift(wave_generator_square_shift), // From square_shift
+        .triangle_shift(wave_generator_triangle_shift), // From triangle_shift
+        .sawtooth_shift(wave_generator_sawtooth_shift), // From sawtooth_shift
+        .increment_1(wave_generator_increment_1), // From voice_1_fcw
+        .note_start_1(wave_generator_note_start_1), // From dmem_wsel
+        .note_release_1(wave_generator_note_release_1), // From dmem_wsel
+        .note_reset_1(wave_generator_note_reset_1), // From dmem_wsel
+        .note_finished_1(wave_generator_note_finished_1), // To dmem_rsel
+        .increment_2(wave_generator_increment_2), // From voice_2_fcw
+        .note_start_2(wave_generator_note_start_2), // From dmem_wsel
+        .note_release_2(wave_generator_note_release_2), // From dmem_wsel
+        .note_reset_2(wave_generator_note_reset_2), // From dmem_wsel
+        .note_finished_2(wave_generator_note_finished_2), // To dmem_rsel
+        .increment_3(wave_generator_increment_3), // From voice_3_fcw
+        .note_start_3(wave_generator_note_start_3), // From dmem_wsel
+        .note_release_3(wave_generator_note_release_3), // From dmem_wsel
+        .note_reset_3(wave_generator_note_reset_3), // From dmem_wsel
+        .note_finished_3(wave_generator_note_finished_3), // To dmem_rsel
+        .increment_4(wave_generator_increment_4), // From voice_4_fcw
+        .note_start_4(wave_generator_note_start_4), // From dmem_wsel
+        .note_release_4(wave_generator_note_release_4), // From dmem_wsel
+        .note_reset_4(wave_generator_note_reset_4), // From dmem_wsel
+        .note_finished_4(wave_generator_note_finished_4), // To dmem_rsel
+        .wave(wave_generator_wave), // To external
+        .valid(wave_generator_valid) // To external
+    );
+
+    assign wave_generator_global_reset = dmem_wsel_gsr_we;
+    assign wave_generator_global_shift = global_shift_shift_out;
+    assign wave_generator_sine_shift = sine_shift_shift_out;
+    assign wave_generator_square_shift = square_shift_shift_out;
+    assign wave_generator_triangle_shift = triangle_shift_shift_out;
+    assign wave_generator_sawtooth_shift = sawtooth_shift_shift_out;
+    assign wave_generator_increment_1 = voice_1_fcw_fcw_out;
+    assign wave_generator_note_start_1 = dmem_wsel_voice_1_we & dmem_wsel_note_start_we;
+    assign wave_generator_note_release_1 = dmem_wsel_voice_1_we & dmem_wsel_note_release_we;
+    assign wave_generator_note_reset_1 = dmem_wsel_voice_1_we & dmem_wsel_reset_we;
+    assign wave_generator_increment_2 = voice_2_fcw_fcw_out;
+    assign wave_generator_note_start_2 = dmem_wsel_voice_2_we & dmem_wsel_note_start_we;
+    assign wave_generator_note_release_2 = dmem_wsel_voice_2_we & dmem_wsel_note_release_we;
+    assign wave_generator_note_reset_2 = dmem_wsel_voice_2_we & dmem_wsel_reset_we;
+    assign wave_generator_increment_3 = voice_3_fcw_fcw_out;
+    assign wave_generator_note_start_3 = dmem_wsel_voice_3_we & dmem_wsel_note_start_we;
+    assign wave_generator_note_release_3 = dmem_wsel_voice_3_we & dmem_wsel_note_release_we;
+    assign wave_generator_note_reset_3 = dmem_wsel_voice_3_we & dmem_wsel_reset_we;
+    assign wave_generator_increment_4 = voice_4_fcw_fcw_out;
+    assign wave_generator_note_start_4 = dmem_wsel_voice_4_we & dmem_wsel_note_start_we;
+    assign wave_generator_note_release_4 = dmem_wsel_voice_4_we & dmem_wsel_note_release_we;
+    assign wave_generator_note_reset_4 = dmem_wsel_voice_4_we & dmem_wsel_reset_we;
+    assign wave = wave_generator_wave;
+    assign valid = wave_generator_valid;
     
 endmodule
