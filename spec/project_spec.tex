@@ -1266,10 +1266,30 @@ In our case we get:
   \mathtt{CLKOUT0}_f = 125 \text{ MHz} \cdot \frac{34}{5 \cdot 17} = 50 \text{ MHz}
 \end{equation*}
 
-Here's a table of frequencies and ideal PLL settings to achieve them:
-\textbf{TODO}
+Table \ref{pll_parameters} specifies the ideal PLL parameters to get certain output frequencies.
 
-Play around with the multipliers and divisors in the PLL to generate a faster (or slower) clock. You may have to consult Xilinx's documentation on the \verb|PLL2E_ADV| primitive. (You can also use the Clocking Wizard IP generator in Vivado to generate this instantiation.) The parameters can't be set arbitrarily and there are a few caveats. The multipliers and divisors must be integers and you must fall within the device's operating frequency range - Vivado will complain if you don't. A few frequencies to try are: 60 MHz, 75 MHz, and 100 MHz.
+\begin{table}[hbt]
+  \begin{center}
+    \caption{PLL Parameters}
+    \label{pll_params}
+    \begin{tabular}{l l l l}
+      \toprule
+      Frequency & \verb|DIVCLK_DIVIDE| & \verb|CLKFBOUT_MULT| & \verb|CLKOUT0_DIVIDE|\\
+      \midrule
+      50 MHz & 5 & 34 & 17 \\
+      60 MHz & 5 & 36 & 15 \\
+      65 MHz & 5 & 39 & 15 \\
+      70 MHz & 5 & 42 & 15 \\
+      75 MHz & 5 & 33 & 11 \\
+      80 MHz & 5 & 48 & 15 \\
+      85 MHz & 5 & 34 & 10 \\
+      90 MHz & 5 & 36 & 10 \\
+      95 MHz & 5 & 38 & 10 \\
+      100 MHz & 5 & 36 & 9 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{table}
 
 \subsection{Critical Path Identification}
 After running \verb|make impl|, timing analysis will be performed to determine the critical path(s) of your design.
@@ -1278,8 +1298,13 @@ The timing tools will automatically figure out the CPU clock timing constraint b
 The critical path can be found by looking in \verb|build/impl/post_route_timing_summary.rpt|.
 Look for the paths within your CPU (\verb|From Clock: cpu_clk, To Clock: cpu_clk|).
 
-For each timing path look for the attribute called ``slack''. Slack describes how much extra time the combinational delay of the path has before the rising edge of the receiving clock. It is a setup time attribute. Positive slack means that this timing path resolves and settles before the rising edge of the clock, and negative slack indicates a setup time violation.
+For each timing path look for the attribute called ``slack''.
+Slack describes how much extra time the combinational delay of the path has before the rising edge of the receiving clock.
+It is a setup time attribute.
+Positive slack means that this timing path resolves and settles before the rising edge of the clock, and negative slack indicates a setup time violation.
 
+To visualize the path, you can open Vivado (\verb|make vivado|), and open a DCP (Design Checkpoint) file.
+File $\rightarrow$ Open Checkpoint
 You will then see the source and destination of the path which you can usually map to a net in your design.
 
 You can also see (And even visualise) the actual logic path that starts at the source and follows some logic in your design until it gets to the destination.
