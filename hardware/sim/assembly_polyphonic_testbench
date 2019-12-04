@@ -2,8 +2,9 @@
  
 /* MODIFY THIS LINE WITH THE HIERARCHICAL PATH TO YOUR REGFILE ARRAY INDEXED WITH reg_number */
 `define REGFILE_ARRAY_PATH fpga.cpu.rf.registers[reg_number]
-
-module assembly_pwm_testbench();
+    
+	
+module assembly_polyphonic_testbench();
     reg clk, rst;
     reg [3:0] buttons;
     reg [1:0] switches;
