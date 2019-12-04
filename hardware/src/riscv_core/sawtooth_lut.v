@@ -1,17 +1,23 @@
 module sawtooth_lut (
     input clk,
-    input en,
-    input [14:0] addr,
-    output reg [11:0] dout
+    input ena,
+    input [7:0] addra,
+    output reg [20:0] douta,
+    input enb,
+    input [7:0] addrb,
+    output reg [20:0] doutb
 );
-    reg [11:0] mem [32768-1:0];
-    
+    reg [20:0] mem [256-1:0];
+
     initial begin
         $readmemh("../../scripts/sawtooth_lut.hex", mem);
     end
     
     always @(posedge clk) begin
-        dout <= mem[addr];
+        if (ena)
+            douta <= mem[addra];
+        if (enb)
+            doutb <= mem[addrb];
     end
-
+    
 endmodule

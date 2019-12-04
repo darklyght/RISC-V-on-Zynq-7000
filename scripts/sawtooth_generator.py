@@ -5,8 +5,6 @@ def twos_comp(val, bits):
     return val
 
 with open ('sawtooth_lut.hex', 'w') as f:
-    for i in range(0, 32768):
-        if (i <= 32768 / 2):
-            f.write('{:x}'.format(twos_comp(int((i/(32768/2)*2044)), 12)) + "\n")
-        else:
-            f.write('{:x}'.format(twos_comp(int((i/(32768/2)*2044-4088)), 12)) + "\n")
+    for i in range(0, 256):
+        print(int((i/256*32768)))
+        f.write('{:x}'.format(twos_comp(int((i/256*32768)), 21)) + "\n")

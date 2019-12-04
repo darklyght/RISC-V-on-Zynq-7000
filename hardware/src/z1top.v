@@ -6,7 +6,7 @@ module z1top #(
     parameter SYSTEM_CLOCK_FREQ = 125_000_000,
     parameter BAUD_RATE = 115_200,
     // Warning: changing the CPU_CLOCK_FREQ parameter doesn't actually change the clock frequency coming out of the PLL
-    parameter CPU_CLOCK_FREQ = 95_000_000,
+    parameter CPU_CLOCK_FREQ = 90_000_000,
     /* verilator lint_off REALCVT */
     // Sample the button signal every 500us
     parameter integer B_SAMPLE_COUNT_MAX = 0.0005 * CPU_CLOCK_FREQ,
@@ -38,7 +38,7 @@ module z1top #(
         .COMPENSATION         ("BUF_IN"),  // Not "ZHOLD"
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (5),
-        .CLKFBOUT_MULT        (38),
+        .CLKFBOUT_MULT        (34),
         .CLKFBOUT_PHASE       (0.000),
         .CLKOUT0_DIVIDE       (10),
         .CLKOUT0_PHASE        (0.000),
@@ -113,6 +113,10 @@ module z1top #(
     wire cpu_tx, cpu_rx;
     wire [11:0] rv_duty_cycle;
     wire rv_req, dac_ack;
+    wire [11:0] rv_wave;
+    wire dac_source, rv_valid;
+    wire [11:0] async_duty_cycle;
+    wire async_r_en, async_empty;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)
@@ -126,7 +130,10 @@ module z1top #(
         .req(rv_req),
         .ack(dac_ack),
         .FPGA_SERIAL_RX(cpu_rx),
-        .FPGA_SERIAL_TX(cpu_tx)
+        .FPGA_SERIAL_TX(cpu_tx),
+        .dac_source(dac_source),
+        .wave(rv_wave),
+        .valid(rv_valid)
     );
 
     (* IOB = "true" *) reg fpga_serial_tx_iob;
@@ -137,6 +144,20 @@ module z1top #(
         fpga_serial_tx_iob <= cpu_tx;
         fpga_serial_rx_iob <= FPGA_SERIAL_RX;
     end
+
+    async_fifo #(
+        .fifo_depth(4)
+    ) async_fifo (
+        .rst(reset),
+        .w_clk(cpu_clk_g),
+        .w_en(rv_valid),
+        .w_data(rv_wave),
+        .full(),
+        .r_clk(pwm_clk_g),
+        .r_en(async_r_en),
+        .r_data(async_duty_cycle),
+        .empty(async_empty)
+    );
 
     // PWM Controller
     (* IOB = "true" *) reg pwm_iob;
@@ -152,7 +173,11 @@ module z1top #(
     dac dac (
         .clk(pwm_clk_g),
         .rst(pwm_rst),
+        .dac_source(dac_source),
         .rv_duty_cycle(rv_duty_cycle),
+        .async_duty_cycle(async_duty_cycle),
+        .async_r_en(async_r_en),
+        .async_empty(async_empty),
         .req(rv_req),
         .ack(dac_ack),
         .pwm(pwm_out)
