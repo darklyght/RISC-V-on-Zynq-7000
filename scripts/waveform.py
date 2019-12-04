@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # This function generates the waveform for sine, square and sawtooth
 # 440Hz wave sampled at 44.1KHz
 def waveform(wave_type):
+
 	
 	x = np.linspace(-np.pi, np.pi, 101)
 
