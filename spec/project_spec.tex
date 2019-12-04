@@ -1146,6 +1146,14 @@ The CPU will play notes by performing the following sequence:
 You should simulate this sequence in simulation.
 
 \subsubsection{Synth Model}
+We've provided a model of all the blocks above in several Python classes:
+\begin{itemize}
+  \item \verb|scripts/synth/NCO.py| - the NCO model, outputs all 4 waveform types
+  \item \verb|scripts/synth/Blocks.py| - models of the summer and truncator (with global gain)
+  \item \verb|scripts/synth/Synth.py| - model of the full mono and poly synths
+\end{itemize}
+
+You should use \verb|Synth.py| to dump golden DAC samples for testing in simulation.
 
 \subsubsection{FPGA Testing}
 
@@ -1175,6 +1183,8 @@ Parameters that have MMIO addresses like \verb|0x8000_01xx| or \verb|0x8000_02xx
 
 Only the note-specific MMIO registers are distinct for each synth (Table \ref{poly_mmio}).
 The 3rd nibble of the address distinguishes each synth's note registers.
+
+A polyphonic synth model is in \verb|scripts/synth/Synth.py|.
 
 \begin{table}[hbt]
   \begin{center}
@@ -1245,7 +1255,19 @@ It is a 125 MHz clock signal, which we will use to derive our CPU clock.
 Scrolling down a little further, you will see an instantiation of \verb|PLLE2_ADV|, which is a PLL (phase locked loop) primitive on the FPGA.
 This is a circuit that lets us create a new clock from an existing clock with a user-specified multiply-divide ratio.
 
-The \verb|CLKIN| input clock of the PLL is driven by the 125 MHz \verb|user_clk_g| (buffered \verb|USER_CLK|). The PLL divides this frequency by the \verb|DIVCLK_DIVIDE| parameter, which is set to 5. Thus, internally, the PLL creates a 25 MHz clock. Then, this multiplied clock is divided by \verb|CLKFBOUT_MULT| parameter and divided by the \verb|CLKOUT0_DIVIDE| parameter. In our case, this yields \verb|125_000_000 / 5 * | \newline \verb|34 / 17 = 50_000_000|, our desired CPU clock. Finally, the multiplied and divided clock shows up at the \verb|CLKOUT0| output clock of the PLL, which is connected to \verb|cpu_clk|. The \verb|cpu_clk| is buffered and \verb|cpu_clk_g| is used in our CPU and other modules.
+The \verb|CLKIN1| input clock of the PLL is driven by the 125 MHz \verb|CLK_125MHZ_FPGA|.
+The frequency of \verb|CLKOUT0| is calculated as:
+\begin{equation*}
+  \mathtt{CLKOUT0}_f = \mathtt{CLKIN1}_f \cdot \frac{\mathtt{CLKFBOUT\_MULT}}{\mathtt{DIVCLK\_DIVIDE} \cdot \mathtt{CLKOUT0\_DIVIDE}}
+\end{equation*}
+
+In our case we get:
+\begin{equation*}
+  \mathtt{CLKOUT0}_f = 125 \text{ MHz} \cdot \frac{34}{5 \cdot 17} = 50 \text{ MHz}
+\end{equation*}
+
+Here's a table of frequencies and ideal PLL settings to achieve them:
+\textbf{TODO}
 
 Play around with the multipliers and divisors in the PLL to generate a faster (or slower) clock. You may have to consult Xilinx's documentation on the \verb|PLL2E_ADV| primitive. (You can also use the Clocking Wizard IP generator in Vivado to generate this instantiation.) The parameters can't be set arbitrarily and there are a few caveats. The multipliers and divisors must be integers and you must fall within the device's operating frequency range - Vivado will complain if you don't. A few frequencies to try are: 60 MHz, 75 MHz, and 100 MHz.
 

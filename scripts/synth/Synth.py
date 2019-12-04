@@ -88,8 +88,8 @@ class PolySynth:
 if __name__ == "__main__":
     fsamp = 30e3
 
-    #s = MonoSynth(fsamp, pure_sine)
-    s = PolySynth(fsamp, pure_sine, 4)
+    s = MonoSynth(fsamp, pure_sine)
+    #s = PolySynth(fsamp, pure_sine, 4)
     s.start_note(220)
     samples = [s.next_sample() for x in range(10000)]
     s.start_note(440)
