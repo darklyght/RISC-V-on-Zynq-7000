@@ -18,3 +18,4 @@ ucli.key
 .mypy_cache
 *.bin
 __pycache__
+*.txt

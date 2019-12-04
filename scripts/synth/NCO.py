@@ -54,15 +54,16 @@ class NCO:
         return samples
 
     def next_sample_f(self, freq: float) -> Tuple[FXnum, FXnum, FXnum, FXnum]:
-        #phase_increment = (freq / self.fsamp) * 2**self.N
         return self.next_sample(self.phase_increment(freq))
-                #int(round(phase_increment)))
 
     def phase_increment(self, freq: float) -> int:
         return int(round((freq / self.fsamp) * 2**self.N))
 
     def effective_frequency(self, phase_increment: int) -> float:
         return (phase_increment * self.fsamp) / (2**self.N)
+
+    def reset(self) -> None:
+        self.phase_acc = 0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='NCO Model')
