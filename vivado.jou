@@ -1,0 +1,18 @@
+#-----------------------------------------------------------
+# Vivado v2019.1 (64-bit)
+# SW Build 2552052 on Fri May 24 14:47:09 MDT 2019
+# IP Build 2548770 on Fri May 24 18:01:18 MDT 2019
+# Start of session at: Tue Dec  3 17:32:09 2019
+# Process ID: 13824
+# Current directory: /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14
+# Command line: vivado
+# Log file: /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/vivado.log
+# Journal file: /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/vivado.jou
+#-----------------------------------------------------------
+start_gui
+create_project project_1 /home/cc/eecs151/fa19/class/eecs151-abl/Desktop/fa19_team14/project_1 -part xc7vx485tffg1157-1
+create_bd_design "design_1"
+update_compile_order -fileset sources_1
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz_0
+endgroup
