@@ -1,6 +1,7 @@
 module Riscv151 #(
     parameter CPU_CLOCK_FREQ = 50_000_000,
-    parameter RESET_PC = 32'h4000_0000
+    parameter RESET_PC = 32'h4000_0000,
+    parameter BAUD_RATE = 115200
 )(
     input clk,
     input rst,
@@ -63,7 +64,8 @@ module Riscv151 #(
 
     // On-chip UART
     uart #(
-        .CLOCK_FREQ(CPU_CLOCK_FREQ)
+        .CLOCK_FREQ(CPU_CLOCK_FREQ),
+        .BAUD_RATE(BAUD_RATE)
     ) on_chip_uart (
         .clk(clk),
         .reset(rst),
