@@ -1011,7 +1011,7 @@ You can read in a LUT binary using \verb|$readmemb()|:
 reg [x:0] sine_lut [0:y];
 `define STRINGIFY_SINELUT(x) `"x/src/audio/sine.bin`"
 initial begin
-  \$readmemh(`STRINGIFY_SINELUT(`ABS_TOP), sine_lut);
+  $readmemb(`STRINGIFY_SINELUT(`ABS_TOP), sine_lut);
 end
 \end{minted}
 
@@ -1237,15 +1237,17 @@ A polyphonic synth model is in \verb|scripts/synth/Synth.py|.
 This optimization checkpoint is lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 
-The optimization goal for this project is to achieve \textbf{maximal performance} on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
+The optimization goal for this project is to minimize the \textbf{execution time} on the \verb|mmult| program, as defined by the 'Iron Law' of Processor Performance.
 
 \begin{equation*}
 \frac{\text{Time}}{\text{Program}} = \frac{\text{Instructions}}{\text{Program}} \times \frac{\text{Cycles}}{\text{Instruction}} \times \frac{\text{Time}}{\text{Cycle}}
 \end{equation*}
 
-Your goal is to minimize the execution time of \verb|mmult|.
 The number of instructions is fixed, but you have freedom to change the CPI and the CPU clock frequency.
 Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
+
+You will be primarily graded on trying several design points (tradeoffs between CPI and frequency) and documenting your results.
+Secondarily
 
 \subsection{Clock Generation Info + Changing Clock Frequency}
 Open up \verb|z1top.v|.
