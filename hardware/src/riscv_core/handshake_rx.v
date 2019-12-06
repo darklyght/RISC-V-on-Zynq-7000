@@ -11,18 +11,22 @@ module handshake_rx (
 
     reg [2:0] state;
     reg [2:0] next_state;
-    reg [1:0] req_sync;
+    (* ASYNC_REG = "TRUE" *) reg [1:0] req_sync;
     
     always @ (*) begin
         case (state)
             IDLE:
                 if (req_sync[1])
                     next_state = RECV;
+                else
+                    next_state = IDLE;
             RECV:
                 next_state = DONE;
             DONE:
                 if (!req_sync[1])
                     next_state = IDLE;
+                else
+                    next_state = DONE;
             default:
                 next_state = IDLE;
         endcase

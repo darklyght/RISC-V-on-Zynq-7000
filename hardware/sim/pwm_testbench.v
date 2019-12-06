@@ -24,7 +24,11 @@ module pwm_testbench();
     // Instantiate your Riscv CPU here and connect the FPGA_SERIAL_TX wires
     // to the off-chip UART we use for testing. The CPU has a UART (on-chip UART) inside it.
     
-    z1top fpga (
+    z1top  #(
+        .B_SAMPLE_COUNT_MAX(10),
+        .B_PULSE_COUNT_MAX(1),
+        .RESET_PC(32'h1000_0000)
+    ) fpga (
         .CLK_125MHZ_FPGA(clk),
         .BUTTONS(buttons),
         .SWITCHES(switches),
@@ -86,78 +90,22 @@ module pwm_testbench();
             begin
                 // Wait until off-chip UART's transmit is ready
                 while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h6a;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h61;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h6c;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h20;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h31;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h30;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
-                data_in = 8'h0d;
-                data_in_valid = 1'b1;
-                @(posedge clk); #1;
-                data_in_valid = 1'b0;
-                while (!data_in_ready) @(posedge clk); #1;
                 data_in = 8'h71;
+                data_in_valid = 1'b1;
+                @(posedge clk); #1;
+                data_in_valid = 1'b0;
+                repeat (150000) @(posedge clk);
+                buttons[1] = 1;
+                repeat (150) @(posedge clk);
+                buttons[1] = 0;
+                while (!data_in_ready) @(posedge clk); #1;
+                data_in = 8'h72;
                 data_in_valid = 1'b1;
                 @(posedge clk); #1;
                 data_in_valid = 1'b0;
             end
             begin
-                repeat (500000) @(posedge clk);
+                repeat (300000) @(posedge clk);
                 $finish();
             end
         join

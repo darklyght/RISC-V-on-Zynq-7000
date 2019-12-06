@@ -10,7 +10,7 @@ module handshake_tx (
     output ack_rv
 );
     
-    reg [1:0] ack_sync;
+    (* ASYNC_REG = "TRUE" *) reg [1:0] ack_sync;
 
     always @ (posedge clk) begin
         if (rst)

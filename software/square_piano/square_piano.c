@@ -7,7 +7,10 @@
 
 #define BUFFER_LEN 128
 
+int8_t buffer[BUFFER_LEN];
+
 void send_to_pwm(uint32_t sample) {
+  uint32_t i;
   PWM_DUTY_CYCLE = sample & 0xfff;
   PWM_REQ = 1;
   while (!PWM_ACK) { asm volatile ("nop"); }

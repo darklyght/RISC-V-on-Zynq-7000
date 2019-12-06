@@ -37,6 +37,8 @@ module uart_transmitter #(
             IDLE: begin
                 if (data_in_valid)
                     next_state = LATCH;
+                else
+                    next_state = IDLE;
             end
             LATCH: begin
                 next_state = SENDING;
