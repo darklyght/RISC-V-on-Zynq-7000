@@ -11,7 +11,7 @@ module gray_to_bin #(
     assign bin[addr_width] = gray[addr_width];
     generate
         for (i = addr_width-1; i >= 0; i = i-1) begin
-            assign bin[i] = bin[i+1] ^ gray[i];
+            assign bin[i] = ^gray[addr_width:i];
         end
     endgenerate
 

@@ -113,6 +113,10 @@ module z1top #(
     wire cpu_tx, cpu_rx;
     wire [11:0] rv_duty_cycle;
     wire rv_req, dac_ack;
+    wire [11:0] rv_wave;
+    wire dac_source, rv_valid;
+    wire [11:0] async_duty_cycle;
+    wire async_r_en, async_empty;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
         .RESET_PC(RESET_PC)
@@ -126,7 +130,10 @@ module z1top #(
         .req(rv_req),
         .ack(dac_ack),
         .FPGA_SERIAL_RX(cpu_rx),
-        .FPGA_SERIAL_TX(cpu_tx)
+        .FPGA_SERIAL_TX(cpu_tx),
+        .dac_source(dac_source),
+        .wave(rv_wave),
+        .valid(rv_valid)
     );
 
     (* IOB = "true" *) reg fpga_serial_tx_iob;

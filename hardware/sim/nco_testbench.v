@@ -4,24 +4,26 @@ module nco_testbench ();
     
     reg clk;
     reg rst;
-    reg [14:0] frequency;
-    reg [2:0] sine_weight;
-    reg [2:0] triangle_weight;
-    reg [2:0] sawtooth_weight;
-    reg [2:0] square_weight;
-    wire [11:0] wave;
+    reg [23:0] increment;
+    reg [4:0] sine_shift;
+    reg [4:0] triangle_shift;
+    reg [4:0] sawtooth_shift;
+    reg [4:0] square_shift;
+    wire [20:0] wave;
+    wire valid;
     
     nco #(
         .CPU_CLOCK_FREQ(100_000_000)
     ) dut (
         .clk(clk),
         .rst(rst),
-        .frequency(frequency),
-        .sine_weight(sine_weight),
-        .triangle_weight(triangle_weight),
-        .sawtooth_weight(sawtooth_weight),
-        .square_weight(square_weight),
-        .wave(wave)  
+        .increment(increment),
+        .sine_shift(sine_shift),
+        .triangle_shift(triangle_shift),
+        .sawtooth_shift(sawtooth_shift),
+        .square_shift(square_shift),
+        .wave(wave),
+        .valid(valid)
     );
     
     initial clk = 0;
@@ -36,16 +38,16 @@ module nco_testbench ();
             $dumpvars(0, nco_testbench);
         `endif
         
-        sine_weight = 3'd0;
-        triangle_weight = 3'd0;
-        sawtooth_weight = 3'd2;
-        square_weight = 3'd2;       
+        sine_shift = 5'd31;
+        triangle_shift = 5'd0;
+        sawtooth_shift = 5'd31;
+        square_shift = 5'd31;
         
-        frequency = 15'd2000;
+        increment = 23'd1_024_000;
         rst = 1;
         repeat (5) @(posedge clk);
         rst = 0;
-        repeat (100000) @(posedge clk);
+        repeat (5000000) @(posedge clk);
         $finish();
     end
 

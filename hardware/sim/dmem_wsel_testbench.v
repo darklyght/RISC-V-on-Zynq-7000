@@ -99,6 +99,72 @@ module dmem_wsel_testbench;
 		else 
 			$display("Passed LED,dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we);
 	
+	   #(3)
+	    addr = 32'h80000034;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000038;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000200;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000204;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000208;;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h8000020c;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80001000;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000040;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80000100;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80001004;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
+	   #(3)
+	    addr = 32'h80001008;
+        #(3)
+        
+	   $display("dmem_wea:%b,imem_wea:%b, uart_we:%b, counter_reset:%b, leds_we:%b, tx_duty_we:%b, tx_we:%b, sine_scale_we:%b, square_scale_we:%b, triangle_scale_we:%b, sawtooth_scale_we:%b, fcw_we:%b, dac_source:%b, gsr:%b, note_start:%b, note_release:%b, ",dmem_wea,imem_wea, uart_we, counter_reset, leds_we, tx_duty_we, tx_we, sine_scale_we, square_scale_we, triangle_scale_we, sawtooth_scale_we, fcw_we, dac_source, gsr, note_start, note_release);
+	   
 	    $finish();
     end
 endmodule

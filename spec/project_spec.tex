@@ -89,7 +89,7 @@ The following is a brief description of each checkpoint and approximately how ma
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Draw a schematic of your processor's datapath and pipeline stages.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement your RISC-V processor core in Verilog and write tests to verify your implementation.
   \item \textbf{\audioDueDate \space - \audioTaskName \space (\audioTimeAlloted)} - Attach I/O components from lab to your processor (FIFOs, buttons, switches), general PWM controller, basic subtractive synthesizer
-  \item \textbf{\dfsDueDate \space - \dfsTaskName \space (\dfsTimeAlloted)} - Implement a dedicated power management unit to monitor FPGA temperature and power consumption and dynamically switch the operating frequency of the main CPU.
+  %\item \textbf{\dfsDueDate \space - \dfsTaskName \space (\dfsTimeAlloted)} - Implement a dedicated power management unit to monitor FPGA temperature and power consumption and dynamically switch the operating frequency of the main CPU.
   \item \textbf{\finalCheckoffDueDate \space - Final Checkoff} - Final processor optimization and checkoff
   \item \textbf{\finalReportDueDate \space - Project Report} - Final report due
 \end{itemize}
@@ -940,7 +940,7 @@ The phase increment (also called the `frequency control word') is written by the
 
 To find the frequency resolution (the minimum frequency step) we can look at what change in $f_{sig}$ causes the phase increment to increase by 1:
 \begin{align*}
-  \frac{f_{sig} + \Delta_{f,min}}{t_{samp}} 2^N &= \frac{f_{sig}}{f_{samp}} 2^N + 1 \\
+  \frac{f_{sig} + \Delta_{f,min}}{f_{samp}} 2^N &= \frac{f_{sig}}{f_{samp}} 2^N + 1 \\
   \Delta_{f,min} &= \frac{f_{samp}}{2^N}
 \end{align*}
 
@@ -960,7 +960,7 @@ We will use $M = 8$.
 
 \paragraph{Fixed Point Representation of LUT Values}
 The values in the sine LUT will be signed numbers representing one period of a sampled sine wave.
-They will be stored in a fixed point representation (16 fractional bits, 4 integer bits, 1 sign bit).
+They will be stored in a fixed point representation (16 fractional bits, 4 integer bits inclusive of 1 sign bit).
 This number representation will be used through the entire synthesizer.
 
 Review \href{http://www-inst.eecs.berkeley.edu/~cs61c/sp06/handout/fixedpt.html}{this 61C handout} for a quick overview of fixed point numbers.
@@ -984,28 +984,42 @@ While the MSB $M$ bits are used to index into the LUT, the LSB $N-M$ bits can be
 You should get linear interpolation working after building the basic NCO.
 
 \paragraph{NCO Model}
-We've provided a model of the NCO in \verb|scripts/synth/nco.py|.
-You can uncomment parts of the main function to:
+We've provided a model of the NCO in \verb|scripts/synth/NCO.py|.
+You can run these commands.
+You can replace \verb|sine| with \verb|square|, \verb|triangle|, or \verb|sawtooth|.
 \begin{enumerate}
-  \item Plot NCO samples vs ideal samples from a sine function (to play with how to choose $N$ and $M$ and the effect of interpolation)
-  \item Dump the binary representation of the 4 types of LUTs (so they can be used by \verb|$readmemb| in Verilog)
-  \item Dump the golden NCO samples for a given signal frequency (to check against the RTL implementation)
+  \item \verb|./NCO.py --analysis| - Plot NCO samples vs ideal samples from a sine function (to play with how to choose $N$ and $M$ and the effect of interpolation)
+  \item \verb|./NCO.py --sine-lut| - Dump the binary representation of the 4 types of LUTs (so they can be used by \verb|$readmemb| in Verilog)
+  \item \verb|./NCO.py --sine-plot| - Plot the sine LUT values
+  \item \verb|./NCO.py --golden| - Dump the golden sample values for $f_{samp} = 30 \text{kHz}$ and $f_{sig} = 880 \text{Hz}$
 \end{enumerate}
 
+You can dump a LUT to a file like: \verb|./NCO.py --triangle-lut > triangle.bin|.
+
 \paragraph{Waveform Summation}
-The NCO is responsible for generating all 4 waveform types per sample and summing them together after scaling each waveform's sample value.
-The scaling is done with a simple arithmetic right shift amount assigned to each waveform type.
+The NCO produces all 4 waveform types per sample.
+Another module (the Summer), following the NCO, sums them together after scaling each waveform's sample.
+The scaling is done with an arithmetic right shift amount assigned to each waveform type.
 
 \paragraph{Implementation}
 The NCO implementation details are up to you.
 Note that it is OK to use several clock cycles to generate one sample value, so pipelining is useful for making sure your critical paths are short.
-We recommend that the NCO uses a ready/valid interface to produce samples (that are later consumed by the sample buffer).
+\textbf{We recommend} that the NCO uses a ready/valid interface to produce samples (that are later consumed by the sample buffer).
 
-The NCO should be hooked up to the RISC-V core via MMIO:
+You can read in a LUT binary using \verb|$readmemb()|:
+\begin{minted}{verilog}
+reg [x:0] sine_lut [0:y];
+`define STRINGIFY_SINELUT(x) `"x/src/audio/sine.bin`"
+initial begin
+  \$readmemh(`STRINGIFY_SINELUT(`ABS_TOP), sine_lut);
+end
+\end{minted}
+
+The NCO should be hooked up to the RISC-V core via MMIO (Table \ref{nco_mmio}).
 \begin{table}[hbt]
   \begin{center}
-    \caption{Memory Map for NCO}
-    \label{mem_map2}
+    \caption{Memory Map for NCO and Summer}
+    \label{nco_mmio}
     \begin{tabular}{l l l l}
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
@@ -1022,35 +1036,116 @@ The NCO should be hooked up to the RISC-V core via MMIO:
 \end{table}
 
 \paragraph{Testing}
-You should generate golden samples from the \verb|nco.py| script for various signal frequencies and use a unit-level testbench to verify the NCO produces identical samples.
+You should generate golden samples from the \verb|NCO.py| script for various signal frequencies and use a unit-level testbench to verify the NCO produces identical samples.
 
 \subsubsection{Sample Buffer and CDC - Required}
-The NCO continuously produces samples, but now we want to send those samples to the PWM DAC at a fixed rate.
-Implement a block that rate limits samples from the NCO and sends them to the DAC using the 4-phase CDC handshake at a fixed sample rate.
+The signal chain we want to implement is below (with the data format of their outputs in parentheses, FixP = signed fixed point).
+\begin{align*}
+  \text{NCO (4x 16/4 FixP)} &\rightarrow \text{Summer (16/4 FixP)} \rightarrow \text{Global Gain (16/4 FixP)}\\
+  &\rightarrow \text{Truncator (12-bit unsigned int)} \rightarrow \text{Buffer + CDC} \rightarrow \text{PWM DAC}
+\end{align*}
 
-We've added a MMIO register (PWM DAC Source) that controls whether samples are sent from the CPU or the synthesizer to the PWM block.
+You implemented the NCO and summer in the previous section.
+Now we will implement 4 other blocks:
+\begin{enumerate}
+  \item \textbf{Global gain}: this is just another arithmetic right shift of the summer output
+  \item \textbf{Truncator}: converts a high precision signed fixed-point sample to a 12-bit unsigned integer for the PWM DAC
+  \item \textbf{Buffer}: buffers a continuous stream of samples and emits them at a fixed rate of $f_{samp}$
+  \item \textbf{CDC}: sends samples from the buffer to the PWM clock domain using a 4-phase handshake
+\end{enumerate}
+
+\paragraph{Global Gain and Truncator}
+The global gain is an arithmetic right shifter on the output of the Summer.
+It is used to limit the volume of the synth.
+
+The global gain block outputs fixed point samples (with 16 fractional bits and 4 integer bits).
+But, the PWM DAC takes 12-bit unsigned duty cycle values.
+The truncator should take the 12 MSB bits from the global gain block and treat them as a signed number.
+Then that number should be converted into the PWM duty cycle value:
+\begin{itemize}
+  \item $-2^{11}$: duty cycle[11:0] = 0
+  \item $0$: duty cycle[11:0] = 2048
+  \item $2^{11} - 1$: duty cycle[11:0] = 4095
+\end{itemize}
+
+The global gain comes from MMIO (Table \ref{gain_mmio}).
+\begin{table}[hbt]
+  \begin{center}
+    \caption{Memory Map for Gain/Truncator}
+    \label{gain_mmio}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
+      \midrule
+      \verb|32'h80000104| & Global Gain Shift & Write & \verb|{27'd0, global_gain[4:0]}| \\
+      \midrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+
+\paragraph{Sample Buffer + CDC}
+The NCO continuously produces samples, but now we want to send those samples to the PWM DAC at a fixed rate $f_{samp}$.
+Implement a block that rate limits samples from the NCO and sends them to the PWM DAC using the 4-phase CDC handshake.
+
+We've added a MMIO register (PWM DAC Source) (Table \ref{cdc_mmio}) that controls which duty cycle register feeds the PWM block.
 This 1-bit register should be synchronized to the PWM clock domain and controls which RX duty-cycle register is fed into the PWM block.
 (0 = CPU, 1 = synth)
 
 \begin{table}[hbt]
   \begin{center}
-    \caption{Memory Map for Synth Management}
-    \label{mem_map2}
+    \caption{Memory Map for Synth CDC}
+    \label{cdc_mmio}
     \begin{tabular}{l l l l}
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      \verb|32'h80000040| & PWM DAC Source & Write & \verb|{31'd0, source}| \\
+      \verb|32'h80000044| & PWM DAC Source & Write & \verb|{31'd0, source}| \\
+      \midrule
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\paragraph{Synth Integration}
+The synth top-level should stitch together the blocks above into a signal chain.
+The top-level also contains control signals that the CPU can use to reset the synth (Table \ref{synth_mgmt_mmio}).
+
+The CPU will play notes by performing the following sequence:
+\begin{enumerate}
+  \item Configure the static parameters of the synth (sine/square/triangle/sawtooth NCO gain, global gain, PWM DAC source)
+  \item Write to the global synth reset
+  \item To play a particular note:
+    \begin{enumerate}
+      \item Write the note's FCW to \verb|0x8000_1000|
+      \item Write to \verb|0x8000_1004| which should begin sending samples to the PWM DAC
+      \item Once the note is released, the CPU writes to \verb|0x8000_1008|, and you should stop sending samples to the PWM DAC
+      \item The CPU then polls for \verb|0x8000_100c| to go high, indicating the synth has flushed out all the samples to send
+      \item The CPU writes to \verb|0x8000_1010| to clear \verb|note_finished| and any other synth state
+    \end{enumerate}
+\end{enumerate}
+
+\begin{table}[hbt]
+  \begin{center}
+    \caption{Memory Map for Synth Management}
+    \label{synth_mgmt_mmio}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
       \verb|32'h80000100| & Global Synth Reset & Write & \verb|NA| \\
       \midrule
       \verb|32'h80001004| & Note Start (Voice 1) & Write & \verb|NA| \\
       \verb|32'h80001008| & Note Release (Voice 1) & Write & \verb|NA| \\
       \verb|32'h8000100c| & Note Finished (Voice 1) & Read & \verb|{31'd0, note_finished}| \\
+      \verb|32'h80001010| & Reset (Voice 1) & Write & \verb|NA| \\
       \midrule
     \end{tabular}
   \end{center}
 \end{table}
+
+You should simulate this sequence in simulation.
+
+\subsubsection{Synth Model}
 
 \subsubsection{FPGA Testing}
 
@@ -1059,31 +1154,47 @@ This 1-bit register should be synchronized to the PWM clock domain and controls 
 %% SVF F coeff
 %% SVF Q coeff
 %% SVF bypass enable
+The SVF is an infinite impulse response (IIR) filter with multiple outputs (as shown below). You will need to define this block diagram in verilog and then put the outputs into a mux that the parameters block will control. It's important to note that $Y_h$ is a high pass filtered output, $Y_b$ is the bandpass filtered output, $Y_n$ is the notch filtered output, and lastly $Y_l$ is the low pass filtered output. For further information (such as how to pick the different values for different corner frequencies) you can refer to this reference: \href{https://karmafx.net/docs/karmafx_digitalfilters.pdf}{SVF reference}
+
+\begin{center}
+  \includegraphics[width=\textwidth/2]{images/svf.png}
+\end{center}
+
+In scripts/synthesizer.py, a software implementation of the synthesizer has been provided for you. It is important to keep in mind that digital implementation of IIR filters is non-trivial. If not done carefully, you may exceed the available number of bits and encounter overflow problems. In addition, multiplications must be performed by values less than one to make sure the system is bounded. Therefore, in the model provided for you, we implement "fixed point operation", where fractions are represented by binary numbers. For instance, 0.5 is "1", and 0.625 is "101" ($0.5 \times 1 + 0.25 \times 0 + 0.125 \times 1$). Because we do not have values larger than 1, we do not need to separate integer from fraction (unless you decide to set Q to be larger than 1,in which case you will have to handle this). Performing multiplication of fixed point numbers should be the same as performing regular multiplication. However, the sign of the number (MSB) should be taken out and computed separately. In total, you have 24 bits to spare in the SVF registers, Therefore, budget your resolution wisely to not encounter overflow problems. You may change the values of F to change the corner frequency of your filter. The filter should be able to adapt to different corner frequencies at run time.
 
 \subsubsection{Amplitude Envelope (ADSR) - Optional}
-%% Envelope attack time
-%% Envelope sustain level
-%% Envelope release time
+%% Envelope attack increment per sample
+%% Envelope sustain level (assumed to be 1, so don't define it)
+%% Envelope release decrement per sample (assumed floor to be 0)
+The ADSR block can be simplified to an "ASR" block. Meaning, you just have an "attack, sustain, and release" process. This block will take the output of the SVF and modulate the amplitude such that the resulting sound will get louder, hold, and get quiet after every key press. This is done by multiplying the waveform out of the SVF filter with scalars. The ADSR should receive a "press" and a "release" signal from the CPU. You can choose the time it takes for attack to go from silent to the largest amplitude. Then the output would sustain its largest level until a "release" signal is received, and after that the sound start decaying to silence again. The python model provided for you generates a reference behavior of the ADSR envelop. You may choose the envelop to mimic any instrument you would like to.
 
 \subsubsection{Polyphonic Synthesis - 251A Only}
+To enable polyphony, instantiate multiple synths.
+We'll use 4 voice polyphony.
+Parameters that have MMIO addresses like \verb|0x8000_01xx| or \verb|0x8000_02xx| are shared among all synths.
 
-\subsection{Old Text}
-At this point, you all should be verilog masters so we'll leave most of the design decisions up to you. To help get you started, here are some block descriptions:
-\begin{enumerate}
-    \item The NCO can be modeled as an overflowing counter and can address multiple look up tables that describe different waveforms. For example, you can have a look up table that describes a sine wave shape and then use the frequency of your overflowing counter to determine what the frequency of the output sine wave should be. If you want to generate complex waveforms, you can take the output from multiple different look up tables (like a sine wave and a saw-tooth) and sum them! \\
-    \newline
-    In scripts/waveform.py, a script that generates 440Hz sine, square and sawtooth waveforms for one cycle has been provided for you. You can run this through scripts/rom$\_$generator.py to generate the LUT.
-    The format of the waveform will be fixed point binary. For more details on this, keep reading.
+Only the note-specific MMIO registers are distinct for each synth (Table \ref{poly_mmio}).
+The 3rd nibble of the address distinguishes each synth's note registers.
 
-    \item The SVF is an infinite impulse response (IIR) filter with multiple outputs (as shown below). You will need to define this block diagram in verilog and then put the outputs into a mux that the parameters block will control. It's important to note that $Y_h$ is a high pass filtered output, $Y_b$ is the bandpass filtered output, $Y_n$ is the notch filtered output, and lastly $Y_l$ is the low pass filtered output. For further information (such as how to pick the different values for different corner frequencies) you can refer to this reference: \href{https://karmafx.net/dochttps://www.overleaf.com/project/5dcf205cde307800019d9e74s/karmafx_digitalfilters.pdf}{SVF reference}
-        \begin{center}
-        \includegraphics[width=\textwidth/2]{images/svf.png}
-        \end{center}
+\begin{table}[hbt]
+  \begin{center}
+    \caption{Memory Map for Polyphony}
+    \label{poly_mmio}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
+      \midrule
+      \verb|32'h80002000| & Frequency Control Word (Voice 2) & Write & \verb|{8'd0, fcw[23:0]}| \\
+      \verb|32'h80002004| & Note Start (Voice 2) & Write & \verb|NA| \\
+      \verb|32'h80002008| & Note Release (Voice 2) & Write & \verb|NA| \\
+      \verb|32'h8000200c| & Note Finished (Voice 2) & Read & \verb|{31'd0, note_finished}| \\
+      \verb|32'h80002010| & Reset (Voice 2) & Write & \verb|NA| \\
+      \midrule
+    \end{tabular}
+  \end{center}
+\end{table}
 
-    In scripts/synthesizer.py, a software implementation of the synthesizer has been provided for you. It is important to keep in mind that digital implementation of IIR filters is non-trivial. If not done carefully, you may exceed the available number of bits and encounter overflow problems. In addition, multiplications must be performed by values less than one to make sure the system is bounded. Therefore, in the model provided for you, we implement "fixed point operation", where fractions are represented by binary numbers. For instance, 0.5 is "1", and 0.625 is "101" ($0.5 \times 1 + 0.25 \times 0 + 0.125 \times 1$). Because we do not have values larger than 1, we do not need to separate integer from fraction (unless you decide to set Q to be larger than 1,in which case you will have to handle this). Performing multiplication of fixed point numbers should be the same as performing regular multiplication. However, the sign of the number (MSB) should be taken out and computed separately. In total, you have 24 bits to spare in the SVF registers, Therefore, budget your resolution wisely to not encounter overflow problems. You may change the values of F to change the corner frequency of your filter. The filter should be able to adapt to different corner frequencies at run time.
-
-    \item The ADSR block can be simplified to an "ASR" block. Meaning, you just have an "attack, sustain, and release" process. This block will take the output of the SVF and modulate the amplitude such that the resulting sound will get louder, hold, and get quiet after every key press. This is done by multiplying the waveform out of the SVF filter with scalars. The ADSR should receive a "press" and a "release" signal from the CPU. You can choose the time it takes for attack to go from silent to the largest amplitude. Then the output would sustain its largest level until a "release" signal is received, and after that the sound start decaying to silence again. The python model provided for you generates a reference behavior of the ADSR envelop. You may choose the envelop to mimic any instrument you would like to.
-\end{enumerate}
+\textit{Coming:} software
 
 \subsection{Checkpoint 3 Deliverables Summary}
 \begin{center}
