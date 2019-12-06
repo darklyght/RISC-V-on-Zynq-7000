@@ -119,7 +119,8 @@ module z1top #(
     wire async_r_en, async_empty;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
-        .RESET_PC(RESET_PC)
+        .RESET_PC(RESET_PC),
+        .BAUD_RATE(BAUD_RATE)
     ) cpu (
         .clk(cpu_clk_g),
         .rst(reset),
