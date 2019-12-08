@@ -39,18 +39,23 @@ module wave_generator #(
 );
     wire nco_valid;
     wire [20:0] nco_1_wave;
+    wire [20:0] svf_1_wave;
+    wire svf_1_valid;
     wire [20:0] adsr_1_wave;
     wire adsr_1_valid;
     wire [20:0] nco_2_wave;
-    wire nco_2_valid;
+    wire [20:0] svf_2_wave;
+    wire svf_2_valid;
     wire [20:0] adsr_2_wave;
     wire adsr_2_valid;
     wire [20:0] nco_3_wave;
-    wire nco_3_valid;
+    wire [20:0] svf_3_wave;
+    wire svf_3_valid;
     wire [20:0] adsr_3_wave;
     wire adsr_3_valid;
     wire [20:0] nco_4_wave;
-    wire nco_4_valid;
+    wire [20:0] svf_4_wave;
+    wire svf_4_valid;
     wire [20:0] adsr_4_wave;
     wire adsr_4_valid;
     reg [20:0] wave_sum;
@@ -76,12 +81,24 @@ module wave_generator #(
         .valid(nco_valid)
     );
 
+    svf svf_1 (
+        .clk(clk),
+        .rst(rst),
+        .in_valid(nco_valid),
+        .F(21'b0_0000_0010_0000_0000_0000),
+        .Q(21'b0_0001_0110_1010_0000_1010),
+        .x(nco_1_wave),
+        .sel(2'b00),
+        .y(svf_1_wave),
+        .out_valid(svf_1_valid)
+    );
+
     adsr adsr_1 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_valid),
-        .wave_in(nco_1_wave),
+        .in_valid(svf_1_valid),
+        .wave_in(svf_1_wave),
         .note_start(note_start_1),
         .note_release(note_release_1),
         .note_reset(note_reset_1),
@@ -90,12 +107,24 @@ module wave_generator #(
         .out_valid(adsr_1_valid)
     );
 
+    svf svf_2 (
+        .clk(clk),
+        .rst(rst),
+        .in_valid(nco_valid),
+        .F(21'b0_0000_0010_0000_0000_0000),
+        .Q(21'b0_0001_0110_1010_0000_1010),
+        .x(nco_2_wave),
+        .sel(2'b00),
+        .y(svf_2_wave),
+        .out_valid(svf_2_valid)
+    );
+
     adsr adsr_2 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_valid),
-        .wave_in(nco_2_wave),
+        .in_valid(svf_2_valid),
+        .wave_in(svf_2_wave),
         .note_start(note_start_2),
         .note_release(note_release_2),
         .note_reset(note_reset_2),
@@ -104,12 +133,24 @@ module wave_generator #(
         .out_valid(adsr_2_valid)
     );
 
+    svf svf_3 (
+        .clk(clk),
+        .rst(rst),
+        .in_valid(nco_valid),
+        .F(21'b0_0000_0010_0000_0000_0000),
+        .Q(21'b0_0001_0110_1010_0000_1010),
+        .x(nco_3_wave),
+        .sel(2'b00),
+        .y(svf_3_wave),
+        .out_valid(svf_3_valid)
+    );
+
     adsr adsr_3 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_valid),
-        .wave_in(nco_3_wave),
+        .in_valid(svf_3_valid),
+        .wave_in(svf_3_wave),
         .note_start(note_start_3),
         .note_release(note_release_3),
         .note_reset(note_reset_3),
@@ -118,12 +159,24 @@ module wave_generator #(
         .out_valid(adsr_3_valid)
     );
 
+    svf svf_4 (
+        .clk(clk),
+        .rst(rst),
+        .in_valid(nco_valid),
+        .F(21'b0_0000_0010_0000_0000_0000),
+        .Q(21'b0_0001_0110_1010_0000_1010),
+        .x(nco_4_wave),
+        .sel(2'b00),
+        .y(svf_4_wave),
+        .out_valid(svf_4_valid)
+    );
+
     adsr adsr_4 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_valid),
-        .wave_in(nco_4_wave),
+        .in_valid(svf_4_valid),
+        .wave_in(svf_4_wave),
         .note_start(note_start_4),
         .note_release(note_release_4),
         .note_reset(note_reset_4),

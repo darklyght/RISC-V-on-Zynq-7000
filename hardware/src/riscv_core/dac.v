@@ -78,11 +78,11 @@ module dac (
     assign dac_source_sel_rv = handshake_rx_dout;
     assign dac_source_sel_wg = async_rx_duty_cycle;
     
-    pwm aud_pwm (
+    pdm aud_pdm (
         .clk(clk),
         .rst(rst),
         .duty_cycle(pwm_duty_cycle), // From handshake_rx
-        .pwm(pwm_pwm) // To external
+        .pdm(pwm_pwm) // To external
     );
     
     assign pwm_duty_cycle = dac_source_sel_pwm;

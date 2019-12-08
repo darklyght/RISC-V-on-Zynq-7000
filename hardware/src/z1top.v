@@ -126,7 +126,7 @@ module z1top #(
         .rst(reset),
         .buttons(clean_buttons),
         .switches(SWITCHES),
-        .leds(),
+        .leds(LEDS),
         .duty_cycle(rv_duty_cycle),
         .req(rv_req),
         .ack(dac_ack),
@@ -184,6 +184,4 @@ module z1top #(
         .pwm(pwm_out)
     );
 
-    assign LEDS[0] = dac_source;
-    assign LEDS[1] = pwm_iob;
 endmodule

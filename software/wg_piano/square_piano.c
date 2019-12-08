@@ -4,6 +4,8 @@
 #include "types.h"
 #include "memory_map.h"
 #include "scale.h"
+#include "scale2.h"
+#include "scale3.h"
 
 #define GLOBAL_SHIFT (*((volatile uint32_t*) 0x80000104))
 #define SINE_SHIFT (*((volatile uint32_t*) 0x80000200))
@@ -17,6 +19,16 @@
 #define VOICE1_RELEASE (*((volatile uint32_t*) 0x80001008))
 #define VOICE1_FINISHED (*((volatile uint32_t*) 0x8000100C))
 #define VOICE1_RESET (*((volatile uint32_t*) 0x80001010))
+#define VOICE2_FCW (*((volatile uint32_t*) 0x80002000))
+#define VOICE2_START (*((volatile uint32_t*) 0x80002004))
+#define VOICE2_RELEASE (*((volatile uint32_t*) 0x80002008))
+#define VOICE2_FINISHED (*((volatile uint32_t*) 0x8000200C))
+#define VOICE2_RESET (*((volatile uint32_t*) 0x80002010))
+#define VOICE3_FCW (*((volatile uint32_t*) 0x80004000))
+#define VOICE3_START (*((volatile uint32_t*) 0x80004004))
+#define VOICE3_RELEASE (*((volatile uint32_t*) 0x80004008))
+#define VOICE3_FINISHED (*((volatile uint32_t*) 0x8000400C))
+#define VOICE3_RESET (*((volatile uint32_t*) 0x80004010))
 
 #define BUFFER_LEN 128
 
@@ -62,7 +74,7 @@ int main(void) {
     }
     if (volume == 1) {
         SINE_SHIFT = 0x1F;
-        SQUARE_SHIFT = 0x10;
+        SQUARE_SHIFT = 0x0;
         TRIANGLE_SHIFT = 0x1F;
         SAWTOOTH_SHIFT = 0x1F;
     }
@@ -76,7 +88,7 @@ int main(void) {
         SINE_SHIFT = 0x1F;
         SQUARE_SHIFT = 0x1F;
         TRIANGLE_SHIFT = 0x1F;
-        SAWTOOTH_SHIFT = 0x10;
+        SAWTOOTH_SHIFT = 0x0;
     }
     // Adjust the note length based on button presses
     if (!GPIO_FIFO_EMPTY) {
@@ -99,14 +111,24 @@ int main(void) {
     if (URECV_CTRL) {
         uint8_t byte = URECV_DATA;
         uint32_t tone = switch_periods[byte];
+        uint32_t tone_2 = switch_periods_2[byte];
+        uint32_t tone_3 = switch_periods_3[byte];
         if (tone) {
           VOICE1_FCW = tone;
           VOICE1_START = 0;
+          VOICE2_FCW = tone_2;
+          VOICE2_START = 0;
+          VOICE3_FCW = tone_3;
+          VOICE3_START = 0;
           playing_note = 1;
         }
         else {
           VOICE1_FCW = 0;
           VOICE1_RESET = 0;
+          VOICE2_FCW = 0;
+          VOICE2_RESET = 0;
+          VOICE3_FCW = 0;
+          VOICE3_RESET = 0;
           playing_note = 0;
         }
         time_counter = 0;
@@ -122,6 +144,10 @@ int main(void) {
       playing_note = 0;
       VOICE1_RELEASE = 0;
       VOICE1_RESET = 0;
+      VOICE2_RELEASE = 0;
+      VOICE2_RESET = 0;
+      VOICE3_RELEASE = 0;
+      VOICE3_RESET = 0;
     }
   }
   return 0;
