@@ -20,9 +20,9 @@ module adsr (
     always @ (*) begin
         case (state)
             IDLE:
-                next_state = note_start ? PLAY : IDLE;
+                next_state = global_reset ? IDLE : note_start ? PLAY : IDLE;
             PLAY:
-                next_state = note_release ? STOP : PLAY;
+                next_state = global_reset ? IDLE : note_release ? STOP : PLAY;
             STOP:
                 next_state = note_reset | global_reset ? IDLE : STOP;
             default:

@@ -17,6 +17,8 @@ module async_fifo #(
     output empty
 );
     
+    integer i;    
+    
     reg [data_width-1:0] fifo [fifo_depth-1:0];
     reg [addr_width:0] w_ptr;
     reg [addr_width:0] r_ptr;
@@ -31,6 +33,12 @@ module async_fifo #(
     wire [addr_width:0] r_w_ptr;
     wire full_int;
     wire empty_int;
+
+
+    initial begin
+        for (i = 0; i < fifo_depth; i = i + 1)
+            fifo[i] = 'b0;
+    end
 
     bin_to_gray #(
         .fifo_depth(fifo_depth)
@@ -94,6 +102,7 @@ module async_fifo #(
 
     always @ (posedge r_clk or posedge rst) begin
         if (rst) begin
+            r_data <= 'b0;
             r_ptr <= 'b0;
             r_ptr_gray_reg <= 'b0;
         end else begin

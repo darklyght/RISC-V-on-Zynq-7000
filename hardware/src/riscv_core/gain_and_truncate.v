@@ -12,7 +12,7 @@ module gain_and_truncate (
     reg int_valid;
     wire [20:0] wave_c;
 
-    assign wave_c = wave_int + 21'd1048576;
+    assign wave_c = wave_int + 21'd65536;
     
     always @ (posedge clk) begin
         if (rst) begin
@@ -32,7 +32,7 @@ module gain_and_truncate (
         end else begin
             out_valid <= int_valid;
             if (int_valid)
-                wave_out <= wave_c[20:9];
+                wave_out <= wave_c[16:5];
         end
     end
 

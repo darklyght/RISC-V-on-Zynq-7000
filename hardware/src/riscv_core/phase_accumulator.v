@@ -1,12 +1,12 @@
 module phase_accumulator #(
     parameter CPU_CLOCK_FREQ = 50_000_000,
-    parameter SAMPLING_RATE = 36_621,
-    parameter MAX_COUNT = 2 * CPU_CLOCK_FREQ / SAMPLING_RATE
+    parameter SAMPLING_RATE = 30_000,
+    parameter MAX_COUNT = CPU_CLOCK_FREQ / SAMPLING_RATE
 ) (
     input clk,
     input rst,
     input [23:0] increment,
-    output [11:0] phase,
+    output [23:0] phase,
     output reg valid
 );
     
@@ -42,6 +42,6 @@ module phase_accumulator #(
         end
     end
 
-    assign phase = phase_int[23:12];
+    assign phase = phase_int[23:0];
     
 endmodule

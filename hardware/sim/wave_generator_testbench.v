@@ -9,7 +9,7 @@ module wave_generator_testbench ();
     reg [4:0] square_shift;
     reg [4:0] triangle_shift;
     reg [4:0] sawtooth_shift;
-    reg [4:0] global_gain;
+    reg [4:0] global_shift;
     reg [23:0] increment_1;
     reg note_start_1;
     reg note_release_1;
@@ -34,7 +34,7 @@ module wave_generator_testbench ();
     wire valid;
     
     wave_generator #(
-        .CPU_CLOCK_FREQ(100_000_000)
+        .CPU_CLOCK_FREQ(50_000_000)
     ) dut (
         .clk(clk),
         .rst(rst),
@@ -43,7 +43,7 @@ module wave_generator_testbench ();
         .square_shift(square_shift),
         .triangle_shift(triangle_shift),
         .sawtooth_shift(sawtooth_shift),
-        .global_gain(global_gain),
+        .global_shift(global_shift),
         .increment_1(increment_1),
         .note_start_1(note_start_1),
         .note_release_1(note_release_1),
@@ -69,7 +69,7 @@ module wave_generator_testbench ();
     );
     
     initial clk = 0;
-    always #5 clk = ~clk;
+    always #10 clk = ~clk;
     
     initial begin
         `ifndef IVERILOG
@@ -85,7 +85,7 @@ module wave_generator_testbench ();
         square_shift = 5'd31;
         triangle_shift = 5'd31;
         sawtooth_shift = 5'd31;
-        global_gain = 5'd1;
+        global_shift = 5'd1;
         increment_1 = 24'd225280;
         note_start_1 = 1'b1;
         note_release_1 = 1'b0;

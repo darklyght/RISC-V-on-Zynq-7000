@@ -7,22 +7,40 @@ module async_rx (
     output reg [11:0] duty_cycle
 );
     
-    reg empty_reg;    
+    localparam IDLE = 3'b001, READ = 3'b010, LATCH = 3'b100;
+    reg [2:0] state;
+    reg [2:0] next_state;
+
+    always @ (*) begin
+        case (state)
+            IDLE:
+                if (!empty)
+                    next_state = READ;
+                else
+                    next_state = IDLE;
+            READ:
+                next_state = LATCH;
+            LATCH:
+                next_state = IDLE;
+            default:
+                next_state = IDLE;
+        endcase
+    end
 
     always @ (posedge clk) begin
         if (rst)
-            empty_reg <= 1'b1;
+            state <= IDLE;
         else
-            empty_reg <= empty;
+            state <= next_state;
     end
 
-    assign r_en = ~empty_reg;
+    assign r_en = (state == READ);
 
     always @ (posedge clk) begin
         if (rst)
             duty_cycle <= 12'b0;
         else
-            if (~empty_reg)
+            if (state == LATCH)
                 duty_cycle <= data;
     end
 

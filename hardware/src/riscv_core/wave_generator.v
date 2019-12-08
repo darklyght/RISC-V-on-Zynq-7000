@@ -37,9 +37,8 @@ module wave_generator #(
     output [11:0] wave,
     output valid
 );
-    
+    wire nco_valid;
     wire [20:0] nco_1_wave;
-    wire nco_1_valid;
     wire [20:0] adsr_1_wave;
     wire adsr_1_valid;
     wire [20:0] nco_2_wave;
@@ -59,23 +58,29 @@ module wave_generator #(
 
     nco #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
-    ) nco_1 (
+    ) nco (
         .clk(clk),
         .rst(rst),
-        .increment(increment_1),
+        .increment_1(increment_1),
+        .increment_2(increment_2),
+        .increment_3(increment_3),
+        .increment_4(increment_4),
         .sine_shift(sine_shift),
         .square_shift(square_shift),
         .triangle_shift(triangle_shift),
         .sawtooth_shift(sawtooth_shift),
-        .wave(nco_1_wave),
-        .valid(nco_1_valid)
+        .wave_1(nco_1_wave),
+        .wave_2(nco_2_wave),
+        .wave_3(nco_3_wave),
+        .wave_4(nco_4_wave),
+        .valid(nco_valid)
     );
 
     adsr adsr_1 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_1_valid),
+        .in_valid(nco_valid),
         .wave_in(nco_1_wave),
         .note_start(note_start_1),
         .note_release(note_release_1),
@@ -85,25 +90,11 @@ module wave_generator #(
         .out_valid(adsr_1_valid)
     );
 
-    nco #(
-        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
-    ) nco_2 (
-        .clk(clk),
-        .rst(rst),
-        .increment(increment_2),
-        .sine_shift(sine_shift),
-        .square_shift(square_shift),
-        .triangle_shift(triangle_shift),
-        .sawtooth_shift(sawtooth_shift),
-        .wave(nco_2_wave),
-        .valid(nco_2_valid)
-    );
-
     adsr adsr_2 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_2_valid),
+        .in_valid(nco_valid),
         .wave_in(nco_2_wave),
         .note_start(note_start_2),
         .note_release(note_release_2),
@@ -113,25 +104,11 @@ module wave_generator #(
         .out_valid(adsr_2_valid)
     );
 
-    nco #(
-        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
-    ) nco_3 (
-        .clk(clk),
-        .rst(rst),
-        .increment(increment_3),
-        .sine_shift(sine_shift),
-        .square_shift(square_shift),
-        .triangle_shift(triangle_shift),
-        .sawtooth_shift(sawtooth_shift),
-        .wave(nco_3_wave),
-        .valid(nco_3_valid)
-    );
-
     adsr adsr_3 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_3_valid),
+        .in_valid(nco_valid),
         .wave_in(nco_3_wave),
         .note_start(note_start_3),
         .note_release(note_release_3),
@@ -141,25 +118,11 @@ module wave_generator #(
         .out_valid(adsr_3_valid)
     );
 
-    nco #(
-        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
-    ) nco_4 (
-        .clk(clk),
-        .rst(rst),
-        .increment(increment_4),
-        .sine_shift(sine_shift),
-        .square_shift(square_shift),
-        .triangle_shift(triangle_shift),
-        .sawtooth_shift(sawtooth_shift),
-        .wave(nco_4_wave),
-        .valid(nco_4_valid)
-    );
-
     adsr adsr_4 (
         .clk(clk),
         .rst(rst),
         .global_reset(global_reset),
-        .in_valid(nco_4_valid),
+        .in_valid(nco_valid),
         .wave_in(nco_4_wave),
         .note_start(note_start_4),
         .note_release(note_release_4),
@@ -168,7 +131,7 @@ module wave_generator #(
         .note_finished(note_finished_4),
         .out_valid(adsr_4_valid)
     );
-    
+
     always @ (posedge clk) begin
         if (rst) begin
             valid_sum <= 1'b0;

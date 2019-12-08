@@ -23,7 +23,6 @@ class NCO:
 
         self.sine_lut_float = [np.sin(i * 2*np.pi / self.lut_entries) for i in range(self.lut_entries)]
         self.sine_lut_fixed = [FXnum(x, family=self.output_type) for x in self.sine_lut_float]
-
         self.square_lut_fixed = [FXnum(1, family=self.output_type) for x in range(int(self.lut_entries/2))] + \
             [FXnum(-1, family=self.output_type) for x in range(int(self.lut_entries/2))]
 
@@ -92,7 +91,10 @@ if __name__ == "__main__":
         phase_increment = nco.phase_increment(fsig)
         effective_freq = nco.effective_frequency(phase_increment)
         ideal_samples = [np.sin(2*np.pi*effective_freq*n/fsamp) for n in range(num_samples)]
-
+        print(effective_freq)
+        print(np.array(nco_samples_float))
+        print(np.abs(np.array(nco_samples_float) - np.array(ideal_samples)))
+	
         ## Plot NCO vs ideal samples
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(2, 1)

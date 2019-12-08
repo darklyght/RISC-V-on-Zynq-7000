@@ -8,5 +8,5 @@ def twos_comp(val, bits):
 
 with open ('triangle_lut.hex', 'w') as f:
     for i in range(0, 256):
-        print(int((i/256*65536)))
+        print(int(((i + 0.5)/256*65536)))
         f.write('{:x}'.format(twos_comp(int((i/256*65536)), 21)) + "\n")
