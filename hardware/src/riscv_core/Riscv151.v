@@ -966,7 +966,9 @@ module Riscv151 #(
 	assign voice_4_fcw_we = dmem_wsel_voice_4_we & dmem_wsel_fcw_we;
 	assign voice_4_fcw_fcw_in = dmem_wsel_data[23:0];
 
-    wave_generator wave_generator (
+    wave_generator #(
+        .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
+    ) wave_generator (
         .clk(clk),
         .rst(rst),
         .global_reset(wave_generator_global_reset), // From dmem_wsel
