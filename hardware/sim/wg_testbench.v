@@ -59,7 +59,9 @@ module wg_testbench();
         $readmemh("../../software/bios151v3/bios151v3.hex", fpga.cpu.bios_mem.mem);
         $readmemh("../../software/wg_piano/square_piano.hex", fpga.cpu.imem.mem);
         $readmemh("../../software/wg_piano/square_piano.hex", fpga.cpu.dmem.mem);
-
+        $readmemh("../../scripts/sine_lut.hex", fpga.cpu.wave_generator.nco.sine_wave.sine_lut.mem);
+        $readmemh("../../scripts/triangle_lut.hex", fpga.cpu.wave_generator.nco.triangle_wave.triangle_lut.mem);
+        $readmemh("../../scripts/sawtooth_lut.hex", fpga.cpu.wave_generator.nco.sawtooth_wave.sawtooth_lut.mem);
         `ifndef IVERILOG
             $vcdpluson;
             $vcdplusmemon;
@@ -73,7 +75,7 @@ module wg_testbench();
         buttons[0] = 1;
         repeat (100) @(posedge clk);
         buttons[0] = 0;
-        switches = 2'b00;
+        switches = 2'b01;
         rst = 1'b0;
         data_in_valid = 1'b0;
         data_out_ready = 1'b0;

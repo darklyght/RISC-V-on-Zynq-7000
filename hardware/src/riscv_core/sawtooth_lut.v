@@ -9,9 +9,11 @@ module sawtooth_lut (
 );
     reg [20:0] mem [256-1:0];
 
+    `ifdef SYNTHESIS
     initial begin
-        $readmemh("../../scripts/sawtooth_lut.hex", mem);
+        $readmemh("../../../scripts/sawtooth_lut.hex", mem);
     end
+    `endif
     
     always @(posedge clk) begin
         if (ena)
