@@ -6,7 +6,7 @@ module z1top #(
     parameter SYSTEM_CLOCK_FREQ = 125_000_000,
     parameter BAUD_RATE = 115_200,
     // Warning: changing the CPU_CLOCK_FREQ parameter doesn't actually change the clock frequency coming out of the PLL
-    parameter CPU_CLOCK_FREQ = 85_000_000,
+    parameter CPU_CLOCK_FREQ = 90_000_000,
     /* verilator lint_off REALCVT */
     // Sample the button signal every 500us
     parameter integer B_SAMPLE_COUNT_MAX = 0.0005 * CPU_CLOCK_FREQ,
@@ -38,7 +38,7 @@ module z1top #(
         .COMPENSATION         ("BUF_IN"),  // Not "ZHOLD"
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (5),
-        .CLKFBOUT_MULT        (34),
+        .CLKFBOUT_MULT        (36),
         .CLKFBOUT_PHASE       (0.000),
         .CLKOUT0_DIVIDE       (10),
         .CLKOUT0_PHASE        (0.000),
