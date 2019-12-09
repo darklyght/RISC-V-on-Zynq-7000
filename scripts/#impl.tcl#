@@ -8,24 +8,16 @@ if {[string trim ${CONSTRAINTS}] ne ""} {
 
 opt_design -directive Explore
 place_design -directive Explore
-#set_clock_uncertainty -setup 0.2 [get_clocks USER_CLK_OBJ]
+set_clock_uncertainty -setup 0.3 [get_clocks USER_CLK_OBJ]
 phys_opt_design -directive AggressiveExplore
-report_timing
 phys_opt_design -directive AggressiveFanoutOpt
-report_timing
 phys_opt_design -directive AggressiveExplore
-report_timing
-#set_clock_uncertainty -setup 0 [get_clocks USER_CLK_OBJ]
+set_clock_uncertainty -setup 0 [get_clocks USER_CLK_OBJ]
 write_checkpoint -force ${TOP}_placed.dcp
 report_utilization -file post_place_utilization.rpt
 #phys_opt_design
 #route_design
 route_design -directive AggressiveExplore
-report_timing
-phys_opt_design -directive AggressiveExplore
-report_timing
-phys_opt_design -directive AggressiveFanoutOpt
-report_timing
 phys_opt_design -directive AggressiveExplore
 
 write_checkpoint -force ${TOP}_routed.dcp
