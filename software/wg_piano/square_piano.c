@@ -34,15 +34,6 @@
 
 int8_t buffer[BUFFER_LEN];
 
-void send_to_pwm(uint32_t sample) {
-  uint32_t i;
-  PWM_DUTY_CYCLE = sample & 0xfff;
-  PWM_REQ = 1;
-  while (!PWM_ACK) { asm volatile ("nop"); }
-  PWM_REQ = 0;
-  while (PWM_ACK) { asm volatile ("nop"); }
-}
-
 int main(void) {
   int8_t buffer[BUFFER_LEN];
   uint32_t switch_period = 0;
@@ -114,6 +105,7 @@ int main(void) {
         uint32_t tone_2 = switch_periods_2[byte];
         uint32_t tone_3 = switch_periods_3[byte];
         if (tone) {
+          GLOBAL_RESET = 0;
           VOICE1_FCW = tone;
           VOICE1_START = 0;
           VOICE2_FCW = tone_2;
@@ -148,6 +140,7 @@ int main(void) {
       VOICE2_RESET = 0;
       VOICE3_RELEASE = 0;
       VOICE3_RESET = 0;
+      GLOBAL_RESET = 0;
     }
   }
   return 0;

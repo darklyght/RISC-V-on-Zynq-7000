@@ -102,6 +102,8 @@ module wave_generator #(
         .note_start(note_start_1),
         .note_release(note_release_1),
         .note_reset(note_reset_1),
+        .increment(12'b0000_0000_0001),
+        .decrement(12'b0000_0000_0001),
         .wave_out(adsr_1_wave),
         .note_finished(note_finished_1),
         .out_valid(adsr_1_valid)
@@ -128,6 +130,8 @@ module wave_generator #(
         .note_start(note_start_2),
         .note_release(note_release_2),
         .note_reset(note_reset_2),
+        .increment(12'b0000_0000_0001),
+        .decrement(12'b0000_0000_0001),
         .wave_out(adsr_2_wave),
         .note_finished(note_finished_2),
         .out_valid(adsr_2_valid)
@@ -154,6 +158,8 @@ module wave_generator #(
         .note_start(note_start_3),
         .note_release(note_release_3),
         .note_reset(note_reset_3),
+        .increment(12'b0000_0000_0001),
+        .decrement(12'b0000_0000_0001),
         .wave_out(adsr_3_wave),
         .note_finished(note_finished_3),
         .out_valid(adsr_3_valid)
@@ -180,6 +186,8 @@ module wave_generator #(
         .note_start(note_start_4),
         .note_release(note_release_4),
         .note_reset(note_reset_4),
+        .increment(12'b0000_0000_0001),
+        .decrement(12'b0000_0000_0001),
         .wave_out(adsr_4_wave),
         .note_finished(note_finished_4),
         .out_valid(adsr_4_valid)

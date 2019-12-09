@@ -1,6 +1,6 @@
 module phase_accumulator #(
     parameter CPU_CLOCK_FREQ = 50_000_000,
-    parameter SAMPLING_RATE = 30_000,
+    parameter SAMPLING_RATE = 100_000,
     parameter MAX_COUNT = CPU_CLOCK_FREQ / SAMPLING_RATE
 ) (
     input clk,

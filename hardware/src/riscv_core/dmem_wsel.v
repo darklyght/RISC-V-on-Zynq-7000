@@ -84,7 +84,7 @@ module dmem_wsel (
 
     assign dmem_wea = addr[28] == 1'b1 ? wea : 4'b0000;
     assign imem_wea = addr[29] == 1'b1 && pc30 == 1'b1 ? wea : 4'b0000;
-    assign uart_we = addr[31] == 1'b1 && addr[12] == 1'b0 && addr[9] == 1'b0 && addr[4] == 1'b0 && addr[3] == 1'b1 ? wea[0] : 1'b0; // 32'h80000008 
+    assign uart_we = addr[31] == 1'b1 && |addr[15:12] == 1'b0 && addr[9] == 1'b0 && addr[4] == 1'b0 && addr[3] == 1'b1 ? wea[0] : 1'b0; // 32'h80000008 
     assign counter_reset = addr[31] == 1'b1 && addr[7:0] == 8'h18 ? |wea : 1'b0; // 32'h80000018 
     assign leds_we = addr[31] == 1'b1 && addr[5:4] == 2'b11 && addr[3:2] == 2'b00 ? wea[0] : 1'b0; // 32'h80000030
     assign tx_duty_we = addr[2]; // 32'h80000034

@@ -6,6 +6,7 @@
 ## Clock signal 125 MHz
 set_property -dict { PACKAGE_PIN H16   IOSTANDARD LVCMOS33 } [get_ports { CLK_125MHZ_FPGA }]; #IO_L13P_T2_MRCC_35 Sch=sysclk
 create_clock -add -name USER_CLK_OBJ -period 8.00 -waveform {0 4} [get_ports { CLK_125MHZ_FPGA }];
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins plle2_cpu_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins plle2_pwm_inst/CLKOUT0]]
 
 ##Switches
 

@@ -73,7 +73,7 @@ module wg_testbench();
         buttons[0] = 1;
         repeat (100) @(posedge clk);
         buttons[0] = 0;
-        switches = 2'b01;
+        switches = 2'b00;
         rst = 1'b0;
         data_in_valid = 1'b0;
         data_out_ready = 1'b0;

@@ -5,7 +5,7 @@ module svf (
     input [20:0] F,
     input [20:0] Q,
     input [20:0] x,
-    output [1:0] sel,
+    input [1:0] sel,
     output reg [20:0] y,
     output out_valid
 );
