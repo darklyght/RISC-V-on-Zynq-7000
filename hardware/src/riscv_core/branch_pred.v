@@ -9,9 +9,9 @@ module branch_pred (
     output predict,
     output [31:0] next_pc
 );
-    reg [5:0] history;
+    reg [4:0] history;
     reg [1:0] history_table [31:0];
-    wire [5:0] new_history;
+    wire [4:0] new_history;
     
     integer i;
     
