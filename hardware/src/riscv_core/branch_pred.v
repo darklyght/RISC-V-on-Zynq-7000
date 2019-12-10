@@ -24,7 +24,7 @@ module branch_pred (
     always @ (posedge clk) begin
         if (rst) begin
             history <= 5'b0;
-            for (i = 0; i < 64; i = i + 1) begin
+            for (i = 0; i < 32; i = i + 1) begin
                 /* verilator lint_off WIDTH */
                 history_table[i] <= i % 4;
                 /* verilator lint_on WIDTH */
