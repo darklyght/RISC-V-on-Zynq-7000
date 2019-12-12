@@ -8,7 +8,7 @@ if {[string trim ${CONSTRAINTS}] ne ""} {
 
 opt_design -directive Explore
 place_design -directive Explore
-#set_clock_uncertainty -setup 0.2 [get_clocks USER_CLK_OBJ]
+#set_clock_uncertainty -setup 0.3 [get_clocks USER_CLK_OBJ]
 phys_opt_design -directive AggressiveExplore
 report_timing
 phys_opt_design -directive AggressiveFanoutOpt

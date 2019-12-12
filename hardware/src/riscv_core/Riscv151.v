@@ -157,6 +157,10 @@ module Riscv151 #(
     wire [4:0] alu_funct5;
     wire alu_bit30;
     wire [31:0] alu_alu_out;
+
+    wire [31:0] addr_gen_alu1_data;
+    wire [31:0] addr_gen_alu2_data;
+    wire [31:0] addr_gen_addr;
     
     wire [31:0] dmem_wsel_addr;
     wire [31:0] dmem_wsel_reg_rs2;
@@ -552,9 +556,18 @@ module Riscv151 #(
     assign alu_funct3 = execute_inst[14:12];
     assign alu_funct5 = execute_inst[6:2];
     assign alu_bit30 = execute_inst[30];
-    assign bios_addrb = alu_alu_out[13:2];
-    assign dmem_addr = alu_alu_out[15:2];
-    assign imem_addra = alu_alu_out[15:2];
+
+    addr_gen addr_gen (
+        .alu1_data(addr_gen_alu1_data), // From alu_sel
+        .alu2_data(addr_gen_alu2_data), // From alu_sel
+        .addr(addr_gen_addr) // To dmem_wsel
+    );
+    
+    assign addr_gen_alu1_data = alu_sel_alu1_data;
+    assign addr_gen_alu2_data = alu_sel_alu2_data;
+    assign bios_addrb = addr_gen_addr[13:2];
+    assign dmem_addr = addr_gen_addr[15:2];
+    assign imem_addra = addr_gen_addr[15:2];
     
     dmem_wsel dmem_wsel (
         .addr(dmem_wsel_addr), // From alu
@@ -588,7 +601,7 @@ module Riscv151 #(
         .reset_we(dmem_wsel_reset_we) // To wave generator
     );
     
-    assign dmem_wsel_addr = alu_alu_out;
+    assign dmem_wsel_addr = addr_gen_addr;
     assign dmem_wsel_reg_rs2 = execute_forward_rs2_data;
     assign dmem_wsel_we = control_dmem_we;
     assign dmem_wsel_funct5 = execute_inst[6:2];

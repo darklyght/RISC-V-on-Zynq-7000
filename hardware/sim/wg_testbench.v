@@ -96,7 +96,7 @@ module wg_testbench();
                 data_in_valid = 1'b0;
             end
             begin
-                repeat (1000000) @(posedge clk);
+                repeat (500000) @(posedge clk);
                 $finish();
             end
         join
